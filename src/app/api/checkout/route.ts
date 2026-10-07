@@ -3,8 +3,6 @@ import { getServerSession } from "next-auth";
 import { createCheckout, lemonSqueezySetup } from "@lemonsqueezy/lemonsqueezy.js";
 import { authOptions } from "@/lib/auth";
 
-
-
 export async function POST() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
@@ -14,13 +12,16 @@ export async function POST() {
     return NextResponse.json({ error: "Already Pro" }, { status: 400 });
   }
 
-  const { LEMONSQUEEZY_API_KEY, LEMONSQUEEZY_STORE_ID, LEMONSQUEEZY_VARIANT_ID, NEXTAUTH_URL } =
+  const { LEMONSQUEEZY_API_KEY, LEMONSQUEEZY_STORE_ID, LEMONSQUEEZY_VARIANT_ID } =
     process.env;
   if (!LEMONSQUEEZY_API_KEY || !LEMONSQUEEZY_STORE_ID || !LEMONSQUEEZY_VARIANT_ID) {
     return NextResponse.json({ error: "Billing not configured" }, { status: 500 });
   }
 
   lemonSqueezySetup({ apiKey: LEMONSQUEEZY_API_KEY });
+
+  // Fallback directly to your live production domain just in case NEXTAUTH_URL is missing
+  const baseUrl = process.env.NEXTAUTH_URL || "https://penny-nine-gamma.vercel.app";
 
   const { data, error } = await createCheckout(LEMONSQUEEZY_STORE_ID, LEMONSQUEEZY_VARIANT_ID, {
     checkoutData: {
@@ -29,9 +30,9 @@ export async function POST() {
       custom: { user_id: session.user.id },
     },
     productOptions: {
-      redirectUrl: `${NEXTAUTH_URL}/dashboard?upgraded=1`,
+      redirectUrl: `${baseUrl}/dashboard?upgraded=1`,
     },
-    // testMode: true, // uncomment if your store is in test mode and the checkout rejects live mode
+    testMode: true, // <-- FIX: Explicitly tell Lemon Squeezy this is a test checkout
   });
 
   if (error || !data) {
