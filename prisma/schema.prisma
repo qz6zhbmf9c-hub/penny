@@ -93,3 +93,7 @@ model Goal {
   
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
+model WebhookEvent {
+  id        String   @id
+  createdAt DateTime @default(now())
+}
