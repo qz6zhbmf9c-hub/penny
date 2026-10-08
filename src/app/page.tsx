@@ -231,7 +231,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-[#272b38]">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-5 py-8 text-sm text-[#8f97a8] sm:flex-row">
-          <div>© {new Date().getFullYear()} Penny by Yessine Ghariani. Built in Sfax, Tunisia. All rights reserved.</div>
+          <div>© 2026 Penny by Yessine Ghariani. Built in Sfax, Tunisia. All rights reserved.</div>
           <nav className="flex flex-wrap justify-center gap-x-6 gap-y-2">
             <Link href="/privacy" className="transition hover:text-white">Privacy Policy</Link>
             <Link href="/terms" className="transition hover:text-white">Terms of Service</Link>
