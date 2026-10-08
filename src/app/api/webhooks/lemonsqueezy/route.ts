@@ -5,21 +5,28 @@ import { PrismaClient, Prisma } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-function validSignature(raw: string, signature: string, secret: string) {
-  const digest = crypto.createHmac("sha256", secret).update(raw).digest("hex");
-  const a = Buffer.from(digest, "utf8");
-  const b = Buffer.from(signature, "utf8");
-  return a.length === b.length && crypto.timingSafeEqual(a, b);
-}
-
 export async function POST(req: Request) {
-  const secret = process.env.LEMONSQUEEZY_WEBHOOK_SECRET;
+  // .trim() removes any accidental invisible spaces you might have pasted into Vercel
+  const secret = (process.env.LEMONSQUEEZY_WEBHOOK_SECRET || "").trim();
   if (!secret) return NextResponse.json({ error: "Not configured" }, { status: 500 });
 
-  const raw = await req.text();
+  // Read the exact raw bytes over the network so Next.js doesn't alter the formatting
+  const buffer = Buffer.from(await req.arrayBuffer());
+  const raw = buffer.toString("utf-8");
+  
   const signature = req.headers.get("x-signature") ?? "";
-  if (!validSignature(raw, signature, secret)) {
-    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+
+  try {
+    const hmac = crypto.createHmac("sha256", secret);
+    const digest = Buffer.from(hmac.update(raw).digest("hex"), "utf8");
+    const sig = Buffer.from(signature, "utf8");
+
+    if (digest.length !== sig.length || !crypto.timingSafeEqual(digest, sig)) {
+      console.error("Signature mismatch. Secret or body is malformed.");
+      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+    }
+  } catch (e) {
+    return NextResponse.json({ error: "Invalid signature logic" }, { status: 401 });
   }
 
   let body: any;
@@ -34,9 +41,11 @@ export async function POST(req: Request) {
   const attrs = order?.attributes;
   if (!event || !order?.id || !attrs) return NextResponse.json({ ok: true });
 
-  const storeOk = String(attrs.store_id) === process.env.LEMONSQUEEZY_STORE_ID;
-  const variantOk =
-    String(attrs.first_order_item?.variant_id) === process.env.LEMONSQUEEZY_VARIANT_ID;
+  const envStoreId = String(process.env.LEMONSQUEEZY_STORE_ID || "").trim();
+  const envVariantId = String(process.env.LEMONSQUEEZY_VARIANT_ID || "").trim();
+  
+  const storeOk = String(attrs.store_id) === envStoreId;
+  const variantOk = String(attrs.first_order_item?.variant_id) === envVariantId;
   if (!storeOk || !variantOk) return NextResponse.json({ ok: true });
 
   const eventKey = `${event}:${order.id}`;
