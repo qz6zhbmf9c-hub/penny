@@ -18,7 +18,7 @@ export default function Home() {
   const [toast, setToast] = useState("");
   const f = (n: number) => cur + Math.round(n).toLocaleString();
 
-  const notify = (m: string) => { setToast(m); setTimeout(() => setToast(""), 1800); };
+  const notify = (m: string) => { setToast(m); setTimeout(() => setToast(""), 2500); };
   const guard = async (fn: () => Promise<unknown>) => { try { await fn(); } catch { notify("Something went wrong"); } };
 
   const load = useCallback(async () => {
@@ -27,12 +27,35 @@ export default function Home() {
       if (isPro) { setBudgets(await api.budgets()); setGoals(await api.goals()); }
     } catch { notify("Couldn't load your data"); }
   }, [isPro]);
+
   useEffect(() => { if (status === "authenticated") load(); }, [status, load]);
 
+  // Handle upgrade polling and URL cleanup smoothly
   useEffect(() => {
-    if (status !== "authenticated" || isPro || !location.search.includes("upgraded=1")) return;
+    if (typeof window === "undefined") return;
+    const hasUpgradedParam = window.location.search.includes("upgraded=1");
+    if (!hasUpgradedParam) return;
+
+    if (isPro) {
+      // Pro is active: remove query param from URL and celebrate
+      window.history.replaceState({}, "", "/dashboard");
+      notify("✨ Welcome to Penny Pro!");
+      return;
+    }
+
+    if (status !== "authenticated") return;
+
+    // Poll the session in the background until the webhook writes to the DB
     let tries = 0;
-    const id = setInterval(() => { update(); if (++tries >= 8) clearInterval(id); }, 2500);
+    const id = setInterval(async () => {
+      await update();
+      tries++;
+      if (tries >= 8) {
+        clearInterval(id);
+        window.history.replaceState({}, "", "/dashboard");
+      }
+    }, 2500);
+
     return () => clearInterval(id);
   }, [status, isPro, update]);
 
@@ -43,7 +66,9 @@ export default function Home() {
     else notify(json.error ?? "Could not start checkout");
   }
 
-  if (status === "loading") return null;
+  // FIX: Only return null if loading without an existing session
+  if (status === "loading" && !session) return null;
+
   if (!session) {
     return (
       <div className="center">
