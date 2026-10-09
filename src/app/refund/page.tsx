@@ -5,7 +5,7 @@ export default function Refund() {
         <h1 className="text-4xl font-extrabold mb-8">Refund Policy</h1>
         <p className="text-[#8f97a8] mb-4">Last updated: 2026</p>
         <p className="mb-4">We want you to be completely satisfied with Penny Pro. If you are not happy with your Pro upgrade, we offer a 14-day money-back guarantee.</p>
-        <p>To request a refund, please contact our support team at support.pennyapp@gmail.com within 14 days of your original purchase. Refunds will be processed to the original payment method.</p>
+        <p>To request a refund, please contact our support team at supportapp.penny@gmail.com within 14 days of your original purchase. Refunds will be processed to the original payment method.</p>
       </div>
     </main>
   );
