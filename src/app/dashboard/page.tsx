@@ -1,4 +1,5 @@
 "use client";
+import "../globals.css";
 import { useCallback, useEffect, useState } from "react";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { api } from "@/lib/api";
