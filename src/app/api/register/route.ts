@@ -1,43 +1,44 @@
 import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { allow, codeMatches, open, tokenId } from "@/lib/otp";
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
-  const email = String(body?.email ?? "").trim().toLowerCase();
-  const password = String(body?.password ?? "");
-  const name = String(body?.name ?? "").trim().slice(0, 80) || null;
+  const token = String(body?.pendingToken ?? "");
+  const code = String(body?.code ?? "").replace(/\D/g, "");
 
-  if (!EMAIL_RE.test(email) || email.length > 254) {
-    return NextResponse.json({ error: "Enter a valid email address." }, { status: 400 });
-  }
-  // bcrypt only uses the first 72 bytes, so cap the length
-  if (password.length < 8 || Buffer.byteLength(password) > 72) {
-    return NextResponse.json({ error: "Password must be 8 to 72 characters." }, { status: 400 });
+  if (!token || code.length !== 6) {
+    return NextResponse.json({ error: "Enter the 6-digit code." }, { status: 400 });
   }
 
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
-    return NextResponse.json(
-      {
-        error: existing.passwordHash
-          ? "An account with this email already exists. Sign in instead."
-          : "This email is registered with Google. Use “Continue with Google”.",
-      },
-      { status: 409 }
-    );
+  const pending = open(token);
+  if (!pending) {
+    return NextResponse.json({ error: "This code has expired. Request a new one." }, { status: 400 });
+  }
+
+  // Max 5 guesses per code
+  if (!allow(`verify:${tokenId(token)}`, 5, 10 * 60_000)) {
+    return NextResponse.json({ error: "Too many attempts. Request a new code." }, { status: 429 });
+  }
+
+  if (!codeMatches(pending.e, code, pending.o)) {
+    return NextResponse.json({ error: "That code is incorrect." }, { status: 400 });
   }
 
   try {
-    const passwordHash = await bcrypt.hash(password, 12);
-    await prisma.user.create({ data: { email, name, passwordHash } });
+    await prisma.user.create({
+      data: {
+        email: pending.e,
+        name: pending.n,
+        passwordHash: pending.p,
+        emailVerified: new Date(),
+      },
+    });
     return NextResponse.json({ ok: true }, { status: 201 });
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
-      return NextResponse.json({ error: "An account with this email already exists." }, { status: 409 });
+      return NextResponse.json({ error: "An account with this email already exists. Sign in instead." }, { status: 409 });
     }
     console.error("Register error:", e);
     return NextResponse.json({ error: "Could not create account." }, { status: 500 });
