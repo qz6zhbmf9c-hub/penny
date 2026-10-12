@@ -32,7 +32,7 @@ export async function POST() {
     productOptions: {
       redirectUrl: `${baseUrl}/dashboard?upgraded=1`,
     },
-    testMode: true, // <-- FIX: Explicitly tell Lemon Squeezy this is a test checkout
+    testMode: false, // <-- FIX: Explicitly tell Lemon Squeezy this is a test checkout
   });
 
   if (error || !data) {
