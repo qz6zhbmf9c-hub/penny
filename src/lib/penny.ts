@@ -1,7 +1,7 @@
 export type Tx = { id: string; d: string; t: "in" | "out"; c: string; n: string; a: number };
 export type Goal = { id: string; n: string; t: number; s: number };
 export type Budgets = Record<string, number>;
-export type View = "ov" | "tx" | "bd" | "gl";
+export type View = "ov" | "tx" | "bd" | "gl" | "pr";
 
 export const C: Record<string, string> = {
   Housing: "#6366f1", Food: "#f59e0b", Transport: "#06b6d4", Fun: "#ec4899",

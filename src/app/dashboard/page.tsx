@@ -1,5 +1,6 @@
 "use client";
 import LoginCard from "@/components/LoginCard";
+import ProfileView from "@/components/ProfileView";
 import "../globals.css";
 import { useCallback, useEffect, useState } from "react";
 import { signOut, useSession } from "next-auth/react";
@@ -7,7 +8,13 @@ import { api } from "@/lib/api";
 import { Budgets, CURRENCIES, Goal, Tx, View } from "@/lib/penny";
 import { BudgetsView, GoalsView, Overview, Transactions } from "@/components/Views";
 
-const TABS: [View, string][] = [["ov", "Overview"], ["tx", "Transactions"], ["bd", "Budgets"], ["gl", "Goals"]];
+const TABS: [View, string][] = [
+  ["ov", "Overview"],
+  ["tx", "Transactions"],
+  ["bd", "Budgets"],
+  ["gl", "Goals"],
+  ["pr", "Profile"],
+];
 
 export default function Home() {
   const { data: session, status, update } = useSession();
@@ -39,7 +46,6 @@ export default function Home() {
     if (!hasUpgradedParam) return;
 
     if (isPro) {
-      // Pro is active: remove query param from URL and celebrate
       window.history.replaceState({}, "", "/dashboard");
       notify("✨ Welcome to Penny Pro!");
       return;
@@ -47,7 +53,6 @@ export default function Home() {
 
     if (status !== "authenticated") return;
 
-    // Poll the session in the background until the webhook writes to the DB
     let tries = 0;
     const id = setInterval(async () => {
       await update();
@@ -68,9 +73,7 @@ export default function Home() {
     else notify(json.error ?? "Could not start checkout");
   }
 
-  // FIX: Only return null if loading without an existing session
   if (status === "loading" && !session) return null;
-
   if (!session) return <LoginCard />;
 
   return (
@@ -81,7 +84,7 @@ export default function Home() {
         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
           <select value={cur} onChange={(e) => setCur(e.target.value)}>{CURRENCIES.map((c) => <option key={c}>{c}</option>)}</select>
           {isPro ? <button className="s" disabled>✨ Pro</button> : <button className="p" onClick={upgrade}>Go Pro</button>}
-          <button className="s" onClick={() => signOut()}>Sign out</button>
+          <button className="s" onClick={() => signOut({ callbackUrl: "/dashboard" })}>Sign out</button>
         </div>
       </div>
       <main>
@@ -101,6 +104,7 @@ export default function Home() {
             onFund={(id, v) => guard(async () => { await api.fundGoal(id, v); setGoals(await api.goals()); })}
             onDelete={(id) => guard(async () => { await api.deleteGoal(id); setGoals(await api.goals()); })} />
         )}
+        {view === "pr" && <ProfileView />}
       </main>
       <div id="toast" className={toast ? "on" : ""}>{toast}</div>
     </>

@@ -80,11 +80,11 @@ svg { overflow: visible; }
 .lg s { width: 0.75rem; height: 0.75rem; border-radius: 50%; display: inline-block; text-decoration: none; }
 .lg span { margin-left: auto; font-weight: 600; }
 
-/* --- Auth Card --- */
+/* --- Auth Card & Inputs --- */
 .or { display: flex; align-items: center; gap: 12px; color: var(--mut); font-size: 12px; margin: 18px 0; }
 .or::before, .or::after { content: ""; flex: 1; height: 1px; background: var(--bd); }
 .field { display: grid; gap: 12px; }
-.field input {
+.field input, textarea {
   width: 100%;
   box-sizing: border-box;
   background: var(--bg);
@@ -97,8 +97,9 @@ svg { overflow: visible; }
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
-.field input::placeholder { color: var(--mut); }
-.field input:focus {
+textarea { resize: vertical; }
+.field input::placeholder, textarea::placeholder { color: var(--mut); }
+.field input:focus, textarea:focus {
   border-color: var(--ac);
   box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.18);
 }
@@ -112,3 +113,14 @@ svg { overflow: visible; }
 .link { background: none; border: 0; color: var(--ac); cursor: pointer; font: inherit; padding: 0; font-weight: 600; }
 .link:hover { text-decoration: underline; }
 .err { color: var(--bad); font-size: 13px; margin: 0; }
+
+/* --- Profile & Delete Account --- */
+.badge { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 12px; font-weight: 700; background: var(--bd); color: var(--mut); }
+.badge.ok { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); }
+.badge.pro { background: linear-gradient(135deg, var(--ac), var(--ac2)); color: #fff; }
+.prow { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--bd); }
+.prow:last-child { border: 0; }
+.stars { display: flex; gap: 4px; }
+.star { background: none; border: 0; font-size: 32px; line-height: 1; cursor: pointer; color: var(--bd); padding: 0; }
+.star.on { color: #f59e0b; }
+.danger { background: var(--bad); color: #fff; border: 0; border-radius: 0.75rem; padding: 9px 16px; font: inherit; font-weight: 600; cursor: pointer; }
