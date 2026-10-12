@@ -79,9 +79,36 @@ svg { overflow: visible; }
 .lg { display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; margin-bottom: 0.5rem; }
 .lg s { width: 0.75rem; height: 0.75rem; border-radius: 50%; display: inline-block; text-decoration: none; }
 .lg span { margin-left: auto; font-weight: 600; }
-.or{display:flex;align-items:center;gap:12px;color:var(--mut);font-size:12px;margin:16px 0}
-.or::before,.or::after{content:"";flex:1;height:1px;background:var(--bd)}
-.field{display:grid;gap:10px}
-.field input{width:100%}
-.link{background:none;border:0;color:var(--ac);cursor:pointer;font:inherit;padding:0;font-weight:600}
-.err{color:var(--bad);font-size:13px;margin:0}
+
+/* --- Auth Card --- */
+.or { display: flex; align-items: center; gap: 12px; color: var(--mut); font-size: 12px; margin: 18px 0; }
+.or::before, .or::after { content: ""; flex: 1; height: 1px; background: var(--bd); }
+.field { display: grid; gap: 12px; }
+.field input {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--bg);
+  border: 1px solid var(--bd);
+  color: var(--tx);
+  padding: 11px 14px;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.field input::placeholder { color: var(--mut); }
+.field input:focus {
+  border-color: var(--ac);
+  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.18);
+}
+.field input:-webkit-autofill,
+.field input:-webkit-autofill:hover,
+.field input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--tx);
+  -webkit-box-shadow: 0 0 0px 1000px var(--bg) inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
+.link { background: none; border: 0; color: var(--ac); cursor: pointer; font: inherit; padding: 0; font-weight: 600; }
+.link:hover { text-decoration: underline; }
+.err { color: var(--bad); font-size: 13px; margin: 0; }
