@@ -40,16 +40,19 @@ model User {
   email         String?   @unique
   emailVerified DateTime?
   image         String?
-  
+
+  // Email/password sign-in (null for Google-only accounts)
+  passwordHash  String?
+
   // Lemon Squeezy Pro Fields
   isPro         Boolean   @default(false)
   proSince      DateTime?
   lsOrderId     String?
   lsCustomerId  String?
-  
+
   accounts      Account[]
   sessions      Session[]
-  
+
   // New tables connected to the user
   transactions  Transaction[]
   budgets       Budget[]

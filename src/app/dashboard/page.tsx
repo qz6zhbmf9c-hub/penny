@@ -1,7 +1,8 @@
 "use client";
+import LoginCard from "@/components/LoginCard";
 import "../globals.css";
 import { useCallback, useEffect, useState } from "react";
-import { signIn, signOut, useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { api } from "@/lib/api";
 import { Budgets, CURRENCIES, Goal, Tx, View } from "@/lib/penny";
 import { BudgetsView, GoalsView, Overview, Transactions } from "@/components/Views";
@@ -70,17 +71,7 @@ export default function Home() {
   // FIX: Only return null if loading without an existing session
   if (status === "loading" && !session) return null;
 
-  if (!session) {
-    return (
-      <div className="center">
-        <div>
-          <div className="logo" style={{ fontSize: 44 }}>Penny<i>.</i></div>
-          <p className="sub" style={{ fontSize: 16, margin: "6px 0 18px" }}>Money, simplified.</p>
-          <button className="p" onClick={() => signIn("google", { callbackUrl: "/dashboard" })}>Continue with Google</button>
-        </div>
-      </div>
-    );
-  }
+  if (!session) return <LoginCard />;
 
   return (
     <>
