@@ -79,7 +79,13 @@ export default function Home() {
   return (
     <>
       <div className="top">
-        <div className="logo">Penny<i>.</i></div>
+        <a
+          href="https://penny-nine-gamma.vercel.app/"
+          className="logo"
+          style={{ color: "inherit", textDecoration: "none" }}
+        >
+          Penny<i>.</i>
+        </a>
         <nav>{TABS.map(([k, label]) => <button key={k} className={k === view ? "on" : ""} onClick={() => setView(k)}>{label}</button>)}</nav>
         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
           <select value={cur} onChange={(e) => setCur(e.target.value)}>{CURRENCIES.map((c) => <option key={c}>{c}</option>)}</select>
