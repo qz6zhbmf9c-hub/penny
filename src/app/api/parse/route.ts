@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { allow } from "@/lib/otp";
 
 const CATS = ["Housing", "Food", "Transport", "Fun", "Health", "Shopping", "Bills", "Income"] as const;
+const MODELS = ["gemini-3.5-flash-lite", "gemini-3.8-flash", "gemini-flash-latest"];
 const YMD = /^\d{4}-\d{2}-\d{2}$/;
 
 const SYSTEM = `You convert one spoken sentence about money into a single transaction.
@@ -38,37 +39,47 @@ export async function POST(req: Request) {
   const clientDay = String(body?.today ?? "");
   const today = YMD.test(clientDay) && !isNaN(Date.parse(clientDay)) ? clientDay : new Date().toISOString().slice(0, 10);
 
-  try {
-    const res = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-        signal: AbortSignal.timeout(12_000),
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: SYSTEM }] },
-          contents: [{ role: "user", parts: [{ text: `Today is ${today}.\nSpeech: """${text}"""` }] }],
-          generationConfig: {
-            temperature: 0,
-            responseMimeType: "application/json",
-            responseSchema: {
-              type: "OBJECT",
-              properties: {
-                t: { type: "STRING", enum: ["in", "out"] },
-                a: { type: "NUMBER" },
-                c: { type: "STRING", enum: [...CATS] },
-                n: { type: "STRING" },
-                d: { type: "STRING" },
-              },
-              required: ["t", "a", "c", "n", "d"],
-            },
-          },
-        }),
-      }
-    );
+  const payload = JSON.stringify({
+    systemInstruction: { parts: [{ text: SYSTEM }] },
+    contents: [{ role: "user", parts: [{ text: `Today is ${today}.\nSpeech: """${text}"""` }] }],
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: "OBJECT",
+        properties: {
+          t: { type: "STRING", enum: ["in", "out"] },
+          a: { type: "NUMBER" },
+          c: { type: "STRING", enum: [...CATS] },
+          n: { type: "STRING" },
+          d: { type: "STRING" },
+        },
+        required: ["t", "a", "c", "n", "d"],
+      },
+    },
+  });
 
-    if (!res.ok) {
-      console.error("Gemini error:", res.status, await res.text().catch(() => ""));
+  try {
+    let res: Response | null = null;
+    let lastErr = "";
+
+    for (const model of MODELS) {
+      res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+          signal: AbortSignal.timeout(12_000),
+          body: payload,
+        }
+      );
+
+      if (res.ok) break;
+      lastErr = await res.text().catch(() => "");
+      console.error(`Gemini error (${model}):`, res.status, lastErr);
+      if (res.status !== 404) break;
+    }
+
+    if (!res || !res.ok) {
       return NextResponse.json({ error: "The AI service is busy. Try again in a moment." }, { status: 502 });
     }
 
