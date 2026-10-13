@@ -80,7 +80,7 @@ export default function Home() {
     <>
       <div className="top">
         <a
-          href="https://penny-nine-gamma.vercel.app/"
+          href="https://mypenny.net"
           className="logo"
           style={{ color: "inherit", textDecoration: "none" }}
         >
