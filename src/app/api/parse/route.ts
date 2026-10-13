@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { allow } from "@/lib/otp";
 
 const CATS = ["Housing", "Food", "Transport", "Fun", "Health", "Shopping", "Bills", "Income"] as const;
-const MODEL = process.env.GEMINI_MODEL || "gemini-1.5-flash";
+const MODEL = "gemini-1.5-flash";
 const YMD = /^\d{4}-\d{2}-\d{2}$/;
 
 const SYSTEM = `You convert one spoken sentence about money into a single transaction.
