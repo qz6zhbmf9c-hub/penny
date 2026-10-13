@@ -70,7 +70,13 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
   const [parsing, setParsing] = useState(false);
   const recRef = useRef<any>(null);
 
-  useEffect(() => () => { try { recRef.current?.abort(); } catch {} }, []);
+  // Aggressive cleanup on unmount
+  useEffect(() => () => { 
+    if (recRef.current) {
+      try { recRef.current.abort(); } catch {}
+      recRef.current = null;
+    }
+  }, []);
 
   const list = txs.filter((x) => (x.n + x.c).toLowerCase().includes(q.toLowerCase()))
     .sort((x, y) => y.d.localeCompare(x.d) || y.id.localeCompare(x.id)).slice(0, 60);
@@ -114,7 +120,10 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
       notify("🔒 Voice logging is a Pro feature!");
       return;
     }
-    if (listening) { recRef.current?.stop(); return; }
+    if (listening && recRef.current) { 
+      try { recRef.current.abort(); } catch {} 
+      return; 
+    }
     if (parsing) return;
 
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -125,20 +134,32 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
     r.interimResults = false;
     r.continuous = false;
     r.maxAlternatives = 1;
+    
     r.onstart = () => setListening(true);
-    r.onend = () => setListening(false);
+    
+    r.onend = () => {
+      setListening(false);
+      try { r.abort(); } catch {} // Force Safari to let go
+      recRef.current = null;
+    };
+    
     r.onerror = (e: any) => {
       setListening(false);
+      try { r.abort(); } catch {} // Force Safari to let go
+      recRef.current = null;
       notify(
         e.error === "not-allowed" || e.error === "service-not-allowed" ? "Microphone access is blocked" :
         e.error === "no-speech" ? "Didn't catch that. Try again" :
         e.error === "aborted" ? "" : "Voice input failed"
       );
     };
+    
     r.onresult = (e: any) => {
       const text = e.results?.[0]?.[0]?.transcript?.trim();
       if (text) parseSpeech(text); else notify("Didn't catch that. Try again");
+      try { r.abort(); } catch {} // Immediately terminate stream
     };
+    
     recRef.current = r;
     try { r.start(); } catch { notify("Voice input failed to start"); }
   }
