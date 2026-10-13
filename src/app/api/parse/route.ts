@@ -4,7 +4,6 @@ import { authOptions } from "@/lib/auth";
 import { allow } from "@/lib/otp";
 
 const CATS = ["Housing", "Food", "Transport", "Fun", "Health", "Shopping", "Bills", "Income"] as const;
-const MODEL = "gemini-1.5-flash";
 const YMD = /^\d{4}-\d{2}-\d{2}$/;
 
 const SYSTEM = `You convert one spoken sentence about money into a single transaction.
@@ -41,7 +40,7 @@ export async function POST(req: Request) {
 
   try {
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
       {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
