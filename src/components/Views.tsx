@@ -68,10 +68,11 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
   const [q, setQ] = useState("");
   const [listening, setListening] = useState(false);
   const [parsing, setParsing] = useState(false);
+  const [scanning, setScanning] = useState(false);
   const recRef = useRef<any>(null);
-  const transcriptRef = useRef(""); // Stores the spoken words while continuous listening is active
+  const fileRef = useRef<HTMLInputElement>(null);
+  const transcriptRef = useRef(""); 
 
-  // Aggressive cleanup on unmount
   useEffect(() => () => { 
     if (recRef.current) {
       try { recRef.current.abort(); } catch {}
@@ -81,6 +82,11 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
 
   const list = txs.filter((x) => (x.n + x.c).toLowerCase().includes(q.toLowerCase()))
     .sort((x, y) => y.d.localeCompare(x.d) || y.id.localeCompare(x.id)).slice(0, 60);
+
+  const localToday = () => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  };
 
   async function add() {
     if (!+a) return notify("Enter an amount");
@@ -94,21 +100,24 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
     navigator.clipboard.writeText(s).then(() => notify("CSV copied"), () => notify("Copy not allowed"));
   }
 
+  function applyParsed(j: { t: "in" | "out"; a: number; c: string; n: string; d: string }, source: string) {
+    setT(j.t); setA(String(j.a)); setN(j.n); setD(j.d);
+    if (j.t === "out") setC(j.c);
+    notify(`Filled from ${source} ✓ Review, then tap Add`);
+  }
+
+  // ---------- Voice Logic (Continuous) ----------
   async function parseSpeech(text: string) {
     setParsing(true);
     try {
-      const now = new Date();
-      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
       const r = await fetch("/api/parse", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, today }),
+        body: JSON.stringify({ text, today: localToday() }),
       });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) return notify(j.error ?? "Couldn't understand that");
-      setT(j.t); setA(String(j.a)); setN(j.n); setD(j.d);
-      if (j.t === "out") setC(j.c);
-      notify("Filled from voice ✓ Review, then tap Add");
+      applyParsed(j, "voice");
     } catch {
       notify("Couldn't reach the voice service");
     } finally {
@@ -121,14 +130,11 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
       notify("🔒 Voice logging is a Pro feature!");
       return;
     }
-    
-    // If they click while it's already listening, stop recording and process the speech
     if (listening && recRef.current) { 
       try { recRef.current.stop(); } catch {} 
       return; 
     }
-    
-    if (parsing) return;
+    if (parsing || scanning) return;
 
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) return notify("Voice input isn't supported in this browser. Try Chrome or Safari.");
@@ -136,22 +142,22 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
     const r = new SR();
     r.lang = navigator.language || "en-US";
     r.interimResults = false;
-    r.continuous = true; // <--- The magic toggle that keeps it listening through pauses
+    r.continuous = true; 
     r.maxAlternatives = 1;
-    transcriptRef.current = ""; // Wipe the slate clean for a new sentence
+    transcriptRef.current = ""; 
     
     r.onstart = () => setListening(true);
     
     r.onend = () => {
       setListening(false);
       const fullText = transcriptRef.current.trim();
-      if (fullText) parseSpeech(fullText); // Only send to AI if they actually said something
-      try { r.abort(); } catch {} // Force Safari to let go of the mic
+      if (fullText) parseSpeech(fullText);
+      try { r.abort(); } catch {} 
       recRef.current = null;
     };
     
     r.onerror = (e: any) => {
-      if (e.error === "no-speech") return; // Ignore silent pauses now that it's continuous
+      if (e.error === "no-speech") return; 
       setListening(false);
       try { r.abort(); } catch {} 
       recRef.current = null;
@@ -163,7 +169,6 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
     };
     
     r.onresult = (e: any) => {
-      // Because continuous=true, we need to gather all the separate phrases they spoke
       let currentText = "";
       for (let i = e.resultIndex; i < e.results.length; ++i) {
         if (e.results[i].isFinal) {
@@ -177,6 +182,80 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
     try { r.start(); } catch { notify("Voice input failed to start"); }
   }
 
+  // ---------- Receipt Logic ----------
+  async function toBase64(file: File): Promise<string> {
+    const MAX = 1600;
+    let src: ImageBitmap | HTMLImageElement;
+    let url = "";
+    try {
+      src = await createImageBitmap(file);
+    } catch {
+      url = URL.createObjectURL(file);
+      src = await new Promise<HTMLImageElement>((res, rej) => {
+        const img = new Image();
+        img.onload = () => res(img);
+        img.onerror = () => rej(new Error("decode"));
+        img.src = url;
+      });
+    }
+    try {
+      const w = "naturalWidth" in src ? src.naturalWidth : src.width;
+      const h = "naturalHeight" in src ? src.naturalHeight : src.height;
+      const s = Math.min(1, MAX / Math.max(w, h));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(w * s);
+      canvas.height = Math.round(h * s);
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("canvas");
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(src, 0, 0, canvas.width, canvas.height);
+      return canvas.toDataURL("image/jpeg", 0.82).split(",")[1];
+    } finally {
+      if (url) URL.revokeObjectURL(url);
+      if ("close" in src) src.close();
+    }
+  }
+
+  function receipt() {
+    if (!isPro) {
+      notify("🔒 Receipt scanning is a Pro feature!");
+      return;
+    }
+    if (parsing || scanning || listening) return;
+    fileRef.current?.click();
+  }
+
+  async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; 
+    if (!file) return;
+    if (!file.type.startsWith("image/")) return notify("Please choose an image");
+    if (file.size > 25 * 1024 * 1024) return notify("That image is too large");
+
+    setScanning(true);
+    setParsing(true);
+    try {
+      let image: string;
+      try { image = await toBase64(file); }
+      catch { return notify("Couldn't read that image. Try a JPG or PNG."); }
+
+      const r = await fetch("/api/receipt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image, mime: "image/jpeg", today: localToday() }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) return notify(j.error ?? "Couldn't read that receipt");
+      applyParsed(j, "receipt");
+    } catch {
+      notify("Couldn't reach the scanner");
+    } finally {
+      setScanning(false);
+      setParsing(false);
+    }
+  }
+
   return (
     <>
       <div className="card">
@@ -186,13 +265,25 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
             type="button"
             className={"s mic" + (listening ? " rec" : "")}
             onClick={mic}
-            disabled={parsing}
+            disabled={parsing || scanning}
             aria-label={listening ? "Stop recording" : "Log by voice"}
             title={isPro ? "Log by voice" : "Voice logging (Pro)"}
             style={{ flex: "0 0 auto", fontSize: 18 }}
           >
-            {parsing ? "⏳" : listening ? "🔴" : isPro ? "🎙️" : "🎙️🔒"}
+            {parsing && !scanning ? "⏳" : listening ? "🔴" : isPro ? "🎙️" : "🎙️🔒"}
           </button>
+          <button
+            type="button"
+            className="s"
+            onClick={receipt}
+            disabled={parsing || listening || scanning}
+            aria-label="Scan a receipt"
+            title={isPro ? "Scan a receipt" : "Receipt scanner (Pro)"}
+            style={{ flex: "0 0 auto", fontSize: 18 }}
+          >
+            {scanning ? "📸⏳" : isPro ? "📸" : "📸🔒"}
+          </button>
+          <input ref={fileRef} type="file" accept="image/*" capture="environment" hidden onChange={onFile} />
           <select value={t} onChange={(e) => setT(e.target.value as "in" | "out")}><option value="out">Expense</option><option value="in">Income</option></select>
           <input type="number" min="0" placeholder="Amount" value={a} onChange={(e) => setA(e.target.value)} />
           <select value={c} onChange={(e) => setC(e.target.value)}>{Object.keys(C).map((k) => <option key={k}>{k}</option>)}</select>
@@ -202,8 +293,9 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
         </div>
         <p className="sub" style={{ margin: "8px 0 0" }}>
           {listening ? "Listening… speak, then tap the mic again to stop 🔴" :
+           scanning ? "Reading your receipt…" :
            parsing ? "Understanding what you said…" :
-           "🎙️ Tip: tap the mic and say “I spent 40 bucks on gas yesterday”"}
+           "🎙️ Say “I spent 40 bucks on gas yesterday”  ·  📸 or snap a photo of a receipt"}
         </p>
       </div>
       <div className="card" style={{ marginTop: 14 }}>
