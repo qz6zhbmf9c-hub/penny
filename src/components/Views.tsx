@@ -16,6 +16,118 @@ function Lock({ onUpgrade }: { onUpgrade: () => void }) {
   );
 }
 
+const roastBoxStyle: React.CSSProperties = {
+  margin: 0,
+  padding: "12px 14px",
+  borderLeft: "3px solid var(--ac2)",
+  background: "var(--bg)",
+  borderRadius: "0 10px 10px 0",
+  fontSize: 16,
+  lineHeight: 1.5,
+};
+
+function monthSummary(txs: Tx[]) {
+  const k = ym(0);
+  const m = mTx(txs, k);
+  const income = sum(m.filter((x) => x.t === "in"), (x) => x.a);
+  const out = m.filter((x) => x.t === "out");
+  const expenses = sum(out, (x) => x.a);
+  const top = Object.entries(spendBy(txs, k)).sort((a, b) => b[1] - a[1])[0];
+
+  const seen = new Set<string>();
+  const notes: string[] = [];
+  for (const x of [...out].sort((a, b) => b.a - a.a)) {
+    const n = (x.n || "").trim();
+    const key = n.toLowerCase();
+    if (n && !seen.has(key)) {
+      seen.add(key);
+      notes.push(n.slice(0, 40));
+      if (notes.length >= 10) break;
+    }
+  }
+  return {
+    income: Math.round(income),
+    expenses: Math.round(expenses),
+    top: top ? { c: top[0], a: Math.round(top[1]) } : null,
+    notes,
+  };
+}
+
+function RoastCard({ txs, f, isPro, onUpgrade }: { txs: Tx[]; f: Fmt } & Gate) {
+  const [roast, setRoast] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [copied, setCopied] = useState(false);
+  const currency = f(0).replace(/0$/, "");
+
+  async function go() {
+    if (busy) return;
+    setErr(""); setBusy(true);
+    try {
+      const r = await fetch("/api/roast", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...monthSummary(txs), currency }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) return setErr(j.error ?? "Couldn't roast you this time.");
+      setRoast(j.roast);
+    } catch {
+      setErr("Couldn't reach the roast machine.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function share() {
+    const text = `${roast}\n\nRoasted by Penny 💀 ${location.origin}`;
+    try {
+      if (navigator.share) { await navigator.share({ text }); return; }
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {}
+  }
+
+  return (
+    <div className="card" style={{ marginTop: 14, minHeight: 130 }}>
+      <h3>💀 AI roast</h3>
+      {isPro ? (
+        <>
+          {roast && <p style={roastBoxStyle}>{roast}</p>}
+          {err && <p className="sub neg" style={{ margin: "0 0 10px" }} role="alert">{err}</p>}
+          {!roast && !err && !busy && (
+            <p className="sub" style={{ margin: "0 0 10px" }}>
+              Penny reads this month&apos;s spending and tells you what it really thinks.
+            </p>
+          )}
+          <div className="form" style={{ marginTop: roast ? 12 : 0 }}>
+            <button className="p" onClick={go} disabled={busy} style={{ flex: "0 0 auto", opacity: busy ? 0.7 : 1 }}>
+              {busy ? "💀 Sharpening the insults…" : roast ? "💀 Roast me again" : "💀 Roast my spending"}
+            </button>
+            {roast && (
+              <button className="s" onClick={share} style={{ flex: "0 0 auto" }}>
+                {copied ? "Copied ✓" : "Share"}
+              </button>
+            )}
+          </div>
+        </>
+      ) : (
+        <>
+          <p style={{ ...roastBoxStyle, filter: "blur(4px)", userSelect: "none" }}>
+            You spent $400 on Uber but only walked 12 steps. Your &quot;Food&quot; category is just delivery apps in a trench coat.
+          </p>
+          <div className="lock">
+            <b>🔒 Pro feature</b>
+            <span className="sub">Get roasted on your real spending</span>
+            <button className="p" onClick={onUpgrade}>Upgrade</button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export function Overview({ txs, f, isPro, onUpgrade }: { txs: Tx[]; f: Fmt } & Gate) {
   const k = ym(0), p = ym(1);
   const inc = sum(mTx(txs, k).filter((x) => x.t === "in"), (x) => x.a);
@@ -55,6 +167,7 @@ export function Overview({ txs, f, isPro, onUpgrade }: { txs: Tx[]; f: Fmt } & G
           </>
         )}
       </div>
+      <RoastCard txs={txs} f={f} isPro={isPro} onUpgrade={onUpgrade} />
     </>
   );
 }
@@ -71,7 +184,7 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
   const [scanning, setScanning] = useState(false);
   const recRef = useRef<any>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-  const transcriptRef = useRef(""); 
+  const transcriptRef = useRef("");
 
   useEffect(() => () => { 
     if (recRef.current) {
@@ -106,7 +219,6 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
     notify(`Filled from ${source} ✓ Review, then tap Add`);
   }
 
-  // ---------- Voice Logic (Continuous) ----------
   async function parseSpeech(text: string) {
     setParsing(true);
     try {
@@ -134,7 +246,7 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
       try { recRef.current.stop(); } catch {} 
       return; 
     }
-    if (parsing || scanning) return;
+    if (parsing) return;
 
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) return notify("Voice input isn't supported in this browser. Try Chrome or Safari.");
@@ -142,9 +254,9 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
     const r = new SR();
     r.lang = navigator.language || "en-US";
     r.interimResults = false;
-    r.continuous = true; 
+    r.continuous = true;
     r.maxAlternatives = 1;
-    transcriptRef.current = ""; 
+    transcriptRef.current = "";
     
     r.onstart = () => setListening(true);
     
@@ -182,7 +294,6 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
     try { r.start(); } catch { notify("Voice input failed to start"); }
   }
 
-  // ---------- Receipt Logic ----------
   async function toBase64(file: File): Promise<string> {
     const MAX = 1600;
     let src: ImageBitmap | HTMLImageElement;
@@ -265,7 +376,7 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
             type="button"
             className={"s mic" + (listening ? " rec" : "")}
             onClick={mic}
-            disabled={parsing || scanning}
+            disabled={parsing}
             aria-label={listening ? "Stop recording" : "Log by voice"}
             title={isPro ? "Log by voice" : "Voice logging (Pro)"}
             style={{ flex: "0 0 auto", fontSize: 18 }}
@@ -276,7 +387,7 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
             type="button"
             className="s"
             onClick={receipt}
-            disabled={parsing || listening || scanning}
+            disabled={parsing || listening}
             aria-label="Scan a receipt"
             title={isPro ? "Scan a receipt" : "Receipt scanner (Pro)"}
             style={{ flex: "0 0 auto", fontSize: 18 }}
