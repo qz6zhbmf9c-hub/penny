@@ -27,6 +27,7 @@ export function Overview({ txs, f, isPro, onUpgrade }: { txs: Tx[]; f: Fmt } & G
   const sp = spendBy(txs, k), top = Object.entries(sp).sort((a, b) => b[1] - a[1])[0];
   const now = new Date(), dim = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const proj = (exp / Math.max(now.getDate(), 1)) * dim;
+  
   return (
     <>
       <div className="grid g4">

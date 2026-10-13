@@ -10,8 +10,10 @@ export const C: Record<string, string> = {
 export const CURRENCIES = ["$", "€", "£", "TND", "CAD", "AED"];
 
 export const ym = (o: number) => {
-  const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - o);
-  return d.toISOString().slice(0, 7);
+  const d = new Date(); 
+  d.setDate(1); 
+  d.setMonth(d.getMonth() - o);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 };
 export const sum = <T,>(a: T[], fn: (x: T) => number) => a.reduce((s, x) => s + fn(x), 0);
 export const mTx = (txs: Tx[], k: string) => txs.filter((x) => x.d.slice(0, 7) === k);
