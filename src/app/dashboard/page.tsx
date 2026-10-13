@@ -125,7 +125,10 @@ export default function Home() {
   }, [status, isPro, session]);
 
   function handleStreakClick() {
-    if (!isPro) return;
+    if (!isPro) {
+      notify("🔒 Daily streak is a Pro feature!");
+      return;
+    }
     const userKey = session?.user?.id || session?.user?.email || "default";
     const storageKey = `penny_streak_${userKey}`;
     const today = getLocalYMD();
@@ -204,39 +207,27 @@ export default function Home() {
         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
           <select value={cur} onChange={(e) => setCur(e.target.value)}>{CURRENCIES.map((c) => <option key={c}>{c}</option>)}</select>
           {isPro ? <button className="s" disabled>✨ Pro</button> : <button className="p" onClick={upgrade}>Go Pro</button>}
-          {isPro && (
-            <button
-              type="button"
-              onClick={handleStreakClick}
-              title={
-                lostStreak > 0
-                  ? `Tap to restore your ${lostStreak}-day streak to ${lostStreak + 1} (once a month)`
-                  : `${streak}-day streak`
-              }
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                padding: "5px 12px",
-                borderRadius: 999,
-                background: "#faeedb",
-                border: "1.5px solid #ebcfa8",
-                color: "#9c5134",
-                fontWeight: 700,
-                fontSize: 14,
-                cursor: "pointer",
-                lineHeight: 1.2,
-              }}
-            >
-              <span>🔥</span>
-              <span>{streak}</span>
-              {lostStreak > 0 && (
-                <span style={{ fontSize: 12, textDecoration: "underline", marginLeft: 2 }}>
-                  Restore ({lostStreak + 1})
-                </span>
-              )}
-            </button>
-          )}
+          <button
+            type="button"
+            className="s"
+            onClick={handleStreakClick}
+            title={
+              !isPro
+                ? "Daily streak (Pro)"
+                : lostStreak > 0
+                ? `Tap to restore your ${lostStreak}-day streak to ${lostStreak + 1} (once a month)`
+                : `${streak}-day streak`
+            }
+          >
+            {isPro ? (
+              <>
+                🔥 {streak}
+                {lostStreak > 0 && ` · Restore (${lostStreak + 1})`}
+              </>
+            ) : (
+              "🔥🔒"
+            )}
+          </button>
           <button className="s" onClick={() => signOut({ callbackUrl: "/dashboard" })}>Sign out</button>
         </div>
       </div>
