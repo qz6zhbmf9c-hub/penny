@@ -6,7 +6,8 @@ export const metadata: Metadata = {
   title: "Penny | Personal Finance Tracker",
   description: "Take control of your money, track expenses, and manage your budget effortlessly with Penny.",
   icons: {
-    icon: "/favicon.ico",
+    icon: "/icon.png?v=2",
+    apple: "/icon.png?v=2",
   },
 };
 
