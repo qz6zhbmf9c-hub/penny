@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { allow } from "@/lib/otp";
 
 const CATS = ["Housing", "Food", "Transport", "Fun", "Health", "Shopping", "Bills"] as const;
-const MODEL = "gemini-1.5-flash"; // Hardcoded to avoid 404s
+const MODELS = ["gemini-3.5-flash-lite", "gemini-3.8-flash", "gemini-flash-latest"];
 const YMD = /^\d{4}-\d{2}-\d{2}$/;
 const MIMES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_B64 = 3_000_000;
@@ -51,45 +51,54 @@ export async function POST(req: Request) {
   const clientDay = String(body?.today ?? "");
   const today = YMD.test(clientDay) && !isNaN(Date.parse(clientDay)) ? clientDay : new Date().toISOString().slice(0, 10);
 
-  try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
+  const payload = JSON.stringify({
+    systemInstruction: { parts: [{ text: SYSTEM }] },
+    contents: [
       {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-        signal: AbortSignal.timeout(25_000),
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: SYSTEM }] },
-          contents: [
-            {
-              role: "user",
-              parts: [
-                { text: `Today is ${today}. Extract the expense from this receipt.` },
-                { inlineData: { mimeType: mime, data: image } },
-              ],
-            },
-          ],
-          generationConfig: {
-            temperature: 0,
-            responseMimeType: "application/json",
-            responseSchema: {
-              type: "OBJECT",
-              properties: {
-                t: { type: "STRING", enum: ["out"] },
-                a: { type: "NUMBER" },
-                c: { type: "STRING", enum: [...CATS] },
-                n: { type: "STRING" },
-                d: { type: "STRING" },
-              },
-              required: ["t", "a", "c", "n", "d"],
-            },
-          },
-        }),
-      }
-    );
+        role: "user",
+        parts: [
+          { text: `Today is ${today}. Extract the expense from this receipt.` },
+          { inlineData: { mimeType: mime, data: image } },
+        ],
+      },
+    ],
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: "OBJECT",
+        properties: {
+          t: { type: "STRING", enum: ["in", "out"] },
+          a: { type: "NUMBER" },
+          c: { type: "STRING", enum: [...CATS] },
+          n: { type: "STRING" },
+          d: { type: "STRING" },
+        },
+        required: ["t", "a", "c", "n", "d"],
+      },
+    },
+  });
 
-    if (!res.ok) {
-      console.error("Gemini receipt error:", res.status, await res.text().catch(() => ""));
+  try {
+    let res: Response | null = null;
+    let lastErr = "";
+
+    for (const model of MODELS) {
+      res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+          signal: AbortSignal.timeout(25_000),
+          body: payload,
+        }
+      );
+
+      if (res.ok) break;
+      lastErr = await res.text().catch(() => "");
+      console.error(`Gemini receipt error (${model}):`, res.status, lastErr);
+    }
+
+    if (!res || !res.ok) {
       return NextResponse.json({ error: "The AI service is busy. Try again in a moment." }, { status: 502 });
     }
 
@@ -106,7 +115,7 @@ export async function POST(req: Request) {
     }
     const c = (CATS as readonly string[]).includes(o.c) ? (o.c as string) : "Shopping";
     let d = YMD.test(String(o.d)) && !isNaN(Date.parse(o.d)) ? String(o.d) : today;
-    if (d > today) d = today; 
+    if (d > today) d = today;
     const n = String(o.n ?? "").trim().slice(0, 40);
 
     return NextResponse.json({ t: "out" as const, a, c, n, d });
