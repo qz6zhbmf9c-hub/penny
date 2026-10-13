@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Bars, Donut } from "./Charts";
 import { Budgets, C, Goal, Tx, mTx, spendBy, sum, ym } from "@/lib/penny";
 
@@ -66,6 +66,12 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
   const [a, setA] = useState(""); const [c, setC] = useState("Food");
   const [n, setN] = useState(""); const [d, setD] = useState(new Date().toISOString().slice(0, 10));
   const [q, setQ] = useState("");
+  const [listening, setListening] = useState(false);
+  const [parsing, setParsing] = useState(false);
+  const recRef = useRef<any>(null);
+
+  useEffect(() => () => { try { recRef.current?.abort(); } catch {} }, []);
+
   const list = txs.filter((x) => (x.n + x.c).toLowerCase().includes(q.toLowerCase()))
     .sort((x, y) => y.d.localeCompare(x.d) || y.id.localeCompare(x.id)).slice(0, 60);
 
@@ -74,16 +80,85 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
     await onAdd({ d, t, c: t === "in" ? "Income" : c, n, a: +a });
     setA(""); setN(""); notify("Added ✓");
   }
+
   function csv() {
     if (!isPro) return onUpgrade();
     const s = "date,type,category,note,amount\n" + txs.map((x) => [x.d, x.t, x.c, `"${x.n}"`, x.a].join(",")).join("\n");
     navigator.clipboard.writeText(s).then(() => notify("CSV copied"), () => notify("Copy not allowed"));
   }
+
+  async function parseSpeech(text: string) {
+    setParsing(true);
+    try {
+      const now = new Date();
+      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+      const r = await fetch("/api/parse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, today }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) return notify(j.error ?? "Couldn't understand that");
+      setT(j.t); setA(String(j.a)); setN(j.n); setD(j.d);
+      if (j.t === "out") setC(j.c);
+      notify("Filled from voice ✓ Review, then tap Add");
+    } catch {
+      notify("Couldn't reach the voice service");
+    } finally {
+      setParsing(false);
+    }
+  }
+
+  function mic() {
+    if (!isPro) {
+      notify("🔒 Voice logging is a Pro feature!");
+      return;
+    }
+    if (listening) { recRef.current?.stop(); return; }
+    if (parsing) return;
+
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) return notify("Voice input isn't supported in this browser. Try Chrome or Safari.");
+
+    const r = new SR();
+    r.lang = navigator.language || "en-US";
+    r.interimResults = false;
+    r.continuous = false;
+    r.maxAlternatives = 1;
+    r.onstart = () => setListening(true);
+    r.onend = () => setListening(false);
+    r.onerror = (e: any) => {
+      setListening(false);
+      notify(
+        e.error === "not-allowed" || e.error === "service-not-allowed" ? "Microphone access is blocked" :
+        e.error === "no-speech" ? "Didn't catch that. Try again" :
+        e.error === "aborted" ? "" : "Voice input failed"
+      );
+    };
+    r.onresult = (e: any) => {
+      const text = e.results?.[0]?.[0]?.transcript?.trim();
+      if (text) parseSpeech(text); else notify("Didn't catch that. Try again");
+    };
+    recRef.current = r;
+    try { r.start(); } catch { notify("Voice input failed to start"); }
+  }
+
   return (
     <>
       <div className="card">
         <h3>Add transaction</h3>
         <div className="form">
+          <button
+            type="button"
+            className={"s mic" + (listening ? " rec" : "")}
+            onClick={mic}
+            disabled={parsing}
+            aria-label={listening ? "Stop recording" : "Log by voice"}
+            title={isPro ? "Log by voice" : "Voice logging (Pro)"}
+            style={{ flex: "0 0 auto", fontSize: 18 }}
+          >
+            {parsing ? "⏳" : listening ? "🔴" : isPro ? "🎙️" : "🎙️🔒"}
+          </button>
           <select value={t} onChange={(e) => setT(e.target.value as "in" | "out")}><option value="out">Expense</option><option value="in">Income</option></select>
           <input type="number" min="0" placeholder="Amount" value={a} onChange={(e) => setA(e.target.value)} />
           <select value={c} onChange={(e) => setC(e.target.value)}>{Object.keys(C).map((k) => <option key={k}>{k}</option>)}</select>
@@ -91,6 +166,11 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
           <input type="date" value={d} onChange={(e) => setD(e.target.value)} />
           <button className="p" onClick={add}>Add</button>
         </div>
+        <p className="sub" style={{ margin: "8px 0 0" }}>
+          {listening ? "Listening… say something like “I spent 40 bucks on gas today”" :
+           parsing ? "Understanding what you said…" :
+           "🎙️ Tip: tap the mic and say “I spent 40 bucks on gas yesterday”"}
+        </p>
       </div>
       <div className="card" style={{ marginTop: 14 }}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
