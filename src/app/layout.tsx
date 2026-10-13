@@ -3,8 +3,11 @@ import "./globals.css";
 import Providers from "@/components/Providers";
 
 export const metadata: Metadata = {
-  title: "Penny",
-  description: "Penny SaaS Dashboard",
+  title: "Penny | Personal Finance Tracker",
+  description: "Take control of your money, track expenses, and manage your budget effortlessly with Penny.",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
