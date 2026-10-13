@@ -69,6 +69,7 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
   const [listening, setListening] = useState(false);
   const [parsing, setParsing] = useState(false);
   const recRef = useRef<any>(null);
+  const transcriptRef = useRef(""); // Stores the spoken words while continuous listening is active
 
   // Aggressive cleanup on unmount
   useEffect(() => () => { 
@@ -120,10 +121,13 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
       notify("🔒 Voice logging is a Pro feature!");
       return;
     }
+    
+    // If they click while it's already listening, stop recording and process the speech
     if (listening && recRef.current) { 
-      try { recRef.current.abort(); } catch {} 
+      try { recRef.current.stop(); } catch {} 
       return; 
     }
+    
     if (parsing) return;
 
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -132,32 +136,41 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
     const r = new SR();
     r.lang = navigator.language || "en-US";
     r.interimResults = false;
-    r.continuous = false;
+    r.continuous = true; // <--- The magic toggle that keeps it listening through pauses
     r.maxAlternatives = 1;
+    transcriptRef.current = ""; // Wipe the slate clean for a new sentence
     
     r.onstart = () => setListening(true);
     
     r.onend = () => {
       setListening(false);
-      try { r.abort(); } catch {} // Force Safari to let go
+      const fullText = transcriptRef.current.trim();
+      if (fullText) parseSpeech(fullText); // Only send to AI if they actually said something
+      try { r.abort(); } catch {} // Force Safari to let go of the mic
       recRef.current = null;
     };
     
     r.onerror = (e: any) => {
+      if (e.error === "no-speech") return; // Ignore silent pauses now that it's continuous
       setListening(false);
-      try { r.abort(); } catch {} // Force Safari to let go
+      try { r.abort(); } catch {} 
       recRef.current = null;
-      notify(
-        e.error === "not-allowed" || e.error === "service-not-allowed" ? "Microphone access is blocked" :
-        e.error === "no-speech" ? "Didn't catch that. Try again" :
-        e.error === "aborted" ? "" : "Voice input failed"
-      );
+      if (e.error !== "aborted") {
+        notify(
+          e.error === "not-allowed" || e.error === "service-not-allowed" ? "Microphone access is blocked" : "Voice input failed"
+        );
+      }
     };
     
     r.onresult = (e: any) => {
-      const text = e.results?.[0]?.[0]?.transcript?.trim();
-      if (text) parseSpeech(text); else notify("Didn't catch that. Try again");
-      try { r.abort(); } catch {} // Immediately terminate stream
+      // Because continuous=true, we need to gather all the separate phrases they spoke
+      let currentText = "";
+      for (let i = e.resultIndex; i < e.results.length; ++i) {
+        if (e.results[i].isFinal) {
+          currentText += e.results[i][0].transcript + " ";
+        }
+      }
+      transcriptRef.current += currentText;
     };
     
     recRef.current = r;
@@ -188,7 +201,7 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
           <button className="p" onClick={add}>Add</button>
         </div>
         <p className="sub" style={{ margin: "8px 0 0" }}>
-          {listening ? "Listening… say something like “I spent 40 bucks on gas today”" :
+          {listening ? "Listening… speak, then tap the mic again to stop 🔴" :
            parsing ? "Understanding what you said…" :
            "🎙️ Tip: tap the mic and say “I spent 40 bucks on gas yesterday”"}
         </p>
