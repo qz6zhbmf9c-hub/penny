@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
+import "./landing.css";
 
 const SITE = "https://mypenny.net";
 const CONTACT_EMAIL = "supportapp.penny@gmail.com";
@@ -8,8 +9,10 @@ const FOUNDER = "Yessine Ghariani";
 const YEAR = 2026;
 const PRO_PRICE = "19.00";
 
+const SAME_AS: string[] = [];
+
 export const metadata: Metadata = {
-  title: { absolute: "Penny — Money, simplified | mypenny.net" },
+  title: { absolute: "Penny: Minimalist AI Personal Finance Tracker | mypenny.net" },
   description:
     "Penny (mypenny.net) is a minimalist AI personal finance and expense tracker by Yessine Ghariani. Log expenses by voice or receipt photo, set monthly budgets, and track savings goals. Free to start, Pro is a one-time $19.",
   applicationName: "Penny",
@@ -25,14 +28,14 @@ export const metadata: Metadata = {
     type: "website",
     url: SITE,
     siteName: "Penny",
-    title: "Penny — Money, simplified",
+    title: "Penny: The minimalist AI personal finance tracker",
     description:
       "Log expenses by voice or receipt photo, stay on budget and hit savings goals. Free to start, one-time $19 Pro upgrade.",
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Penny — Money, simplified",
+    title: "Penny: The minimalist AI personal finance tracker",
     description: "Log expenses by voice or receipt photo, stay on budget and hit savings goals.",
   },
 };
@@ -64,22 +67,53 @@ const FEATURES = [
   },
 ] as const;
 
+const ROWS: [string, boolean, boolean][] = [
+  ["Unlimited transactions", true, true],
+  ["Overview dashboard and charts", true, true],
+  ["Spending by category", true, true],
+  ["Multi-currency display", true, true],
+  ["Monthly budgets per category", false, true],
+  ["Savings goals", false, true],
+  ["Smart spending insights", false, true],
+  ["AI voice logging", false, true],
+  ["AI receipt scanner", false, true],
+  ["AI spending roast", false, true],
+  ["CSV export", false, true],
+  ["Daily streak with monthly restore", false, true],
+];
+
 const FAQS = [
   {
     q: "What is Penny (mypenny.net)?",
     a: "Penny (https://mypenny.net) is an independent minimalist AI personal finance and expense tracker web application created by Yessine Ghariani. You log income and expenses by typing, speaking, or photographing a receipt, then track where your money goes with visual charts, monthly category budgets, and savings goals. Penny is free to start, and Penny Pro is a one-time $19 lifetime upgrade with no recurring subscription.",
   },
   {
-    q: "How is Penny different from traditional budgeting apps?",
+    q: "How is Penny different from traditional budgeting apps like YNAB, Copilot, or Rocket Money?",
     a: "Most budgeting apps charge $80 to $120 per year in subscriptions and require linking your private bank login credentials. Penny requires no bank linking for complete privacy and instant setup, uses AI voice and receipt scanning to make manual entry effortless, and charges a single one-time payment of $19 for Pro instead of a monthly subscription.",
   },
   {
-    q: "How does AI voice logging and receipt scanning work?",
-    a: "In the Transactions tab, tap the mic to speak a sentence or tap the camera to snap a photo of a receipt. Google's Gemini AI extracts the amount, category, merchant note, and date, filling the form automatically for you to review and add.",
+    q: "How does AI voice logging work?",
+    a: "Tap the microphone in the Transactions tab and say something like “I spent 40 bucks on gas yesterday”. Your browser's speech recognition turns your voice into text, and Google's Gemini AI parses that sentence into an amount, category, note, and date. Penny fills in the form for you to review before saving.",
+  },
+  {
+    q: "How does the AI receipt scanner work?",
+    a: "Take or upload a photo of any paper receipt. Penny compresses the image in your browser and uses Gemini Vision AI to extract the merchant name, date, category, and final grand total automatically.",
   },
   {
     q: "How much does Penny Pro cost?",
     a: "Penny Pro is a one-time payment of $19 USD with no subscription. It unlocks monthly budgets, savings goals, smart insights, AI voice logging, the AI receipt scanner, AI spending roasts, CSV export, and the Daily Streak with monthly restore.",
+  },
+  {
+    q: "Is Penny free to use?",
+    a: "Yes. The free plan includes unlimited transaction tracking, an overview dashboard with charts, spending by category, and multi-currency display forever. You only pay if you want to unlock the AI and Pro budgeting features.",
+  },
+  {
+    q: "Does Penny connect to my bank account?",
+    a: "No. Penny never asks for your bank credentials. You log transactions yourself in seconds via voice, receipt photo, or quick typing, which works globally with any bank or cash currency.",
+  },
+  {
+    q: "What is the Daily Streak?",
+    a: "The Daily Streak tracks consecutive days you check in on your finances to build a lasting money habit. Pro members also get a once-a-month streak restore if they miss a day.",
   },
 ] as const;
 
@@ -109,6 +143,7 @@ const jsonLd = {
       disambiguatingDescription:
         "Penny (https://mypenny.net), founded by Yessine Ghariani, is an independent consumer personal finance and budgeting application, distinct from any enterprise software or developer AI memory tools.",
       contactPoint: { "@type": "ContactPoint", contactType: "customer support", email: CONTACT_EMAIL },
+      ...(SAME_AS.length ? { sameAs: SAME_AS } : {}),
     },
     {
       "@type": "WebSite",
@@ -129,6 +164,7 @@ const jsonLd = {
       applicationCategory: "FinanceApplication",
       applicationSubCategory: "Personal Finance, Expense Tracker, Budget Planner",
       operatingSystem: "Web, iOS, Android, macOS, Windows (Browser-based)",
+      browserRequirements: "Requires JavaScript. Works in Chrome, Safari, Edge, and modern mobile browsers.",
       inLanguage: "en",
       description:
         "Penny (mypenny.net) is a minimalist AI personal finance tracker. Log expenses by typing, voice, or receipt photo, set monthly budgets, and track savings goals without linking a bank account.",
@@ -181,98 +217,144 @@ const jsonLdString = JSON.stringify(jsonLd).replace(/</g, "\\u003c");
 
 export default function Home() {
   return (
-    <>
+    <div className="lp">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString }} />
 
-      <div className="top">
-        <Link href="/" className="logo" style={{ color: "inherit", textDecoration: "none" }}>
-          Penny<i>.</i>
-        </Link>
-        <nav>
-          <a href="#features" style={{ color: "inherit", textDecoration: "none", padding: "6px 12px" }}>Features</a>
-          <a href="#pricing" style={{ color: "inherit", textDecoration: "none", padding: "6px 12px" }}>Pricing</a>
-          <a href="#faq" style={{ color: "inherit", textDecoration: "none", padding: "6px 12px" }}>FAQ</a>
-        </nav>
-        <Link href="/dashboard">
-          <button className="p">Open app</button>
-        </Link>
-      </div>
+      <header className="lp-head">
+        <div className="lp-wrap">
+          <Link href="/" className="logo" style={{ textDecoration: "none", color: "inherit" }} aria-label="Penny home">
+            Penny<i>.</i>
+          </Link>
+          <nav className="lp-nav" aria-label="Primary">
+            <a href="#features">Features</a>
+            <a href="#pricing">Pricing</a>
+            <a href="#faq">FAQ</a>
+          </nav>
+          <Link href="/dashboard" className="p">Open app</Link>
+        </div>
+      </header>
 
       <main>
-        <div className="card hero" style={{ textAlign: "center", padding: "48px 24px", marginBottom: 14 }}>
-          <h3>MYPENNY.NET · AI PERSONAL FINANCE TRACKER</h3>
-          <div className="big" style={{ fontSize: "clamp(28px, 5vw, 44px)", margin: "10px 0" }}>
-            Money, simplified.
-          </div>
-          <p className="sub" style={{ maxWidth: 560, margin: "0 auto 20px", fontSize: 15 }}>
-            Penny turns your income and expenses into a clear dashboard—with AI voice logging, receipt scanning, budgets that keep you on track, and goals that get you saving.
+        <section className="lp-wrap lp-hero" aria-labelledby="hero-title">
+          <span className="lp-eyebrow">mypenny.net · AI Personal Finance App</span>
+          <h1 id="hero-title">
+            Penny: The <span className="lp-grad">minimalist AI</span> personal finance tracker.
+          </h1>
+          <p className="lp-sub">
+            Log expenses by voice or receipt photo, stay on budget and hit your savings goals—with no bank linking, no spreadsheets, and no monthly subscription.
           </p>
-          <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
-            <Link href="/dashboard"><button className="p">Get started free</button></Link>
-            <a href="#pricing"><button className="s">See pricing</button></a>
+          <div className="lp-cta">
+            <Link href="/dashboard" className="p big">Get started free</Link>
+            <a href="#pricing" className="s big">See pricing</a>
           </div>
-        </div>
+          <p className="lp-note">Free forever plan · Pro is a one-time $19 · Sign in with Google or email</p>
+        </section>
 
-        <div id="features" className="grid g2" style={{ marginTop: 14 }}>
-          {FEATURES.map((f) => (
-            <div className="card" key={f.h}>
-              <h3>{f.tag === "Pro" ? `✨ ${f.h} (PRO)` : f.h}</h3>
-              <p className="sub" style={{ margin: "6px 0 0", lineHeight: 1.5 }}>{f.p}</p>
-            </div>
-          ))}
-        </div>
+        <section className="lp-wrap lp-sec" aria-labelledby="what-title">
+          <h2 id="what-title">What is Penny?</h2>
+          <p className="lp-def">
+            <strong>Penny</strong> (mypenny.net) is an independent web-based personal finance and expense tracker. It helps you record income and expenses in any currency, see where your money goes, set monthly category budgets, and hit savings goals. Built-in Gemini AI lets you log transactions hands-free by speaking a sentence or snapping a photo of a receipt.
+          </p>
+        </section>
 
-        <div id="pricing" className="grid g2" style={{ marginTop: 14 }}>
-          <div className="card">
-            <h3>FREE PLAN</h3>
-            <div className="big">$0 <span className="sub">forever</span></div>
-            <p className="sub" style={{ margin: "10px 0" }}>
-              ✓ Unlimited transactions<br />
-              ✓ Overview dashboard &amp; charts<br />
-              ✓ Spending by category<br />
-              ✓ Multi-currency display
-            </p>
-            <Link href="/dashboard"><button className="s" style={{ marginTop: 8 }}>Start free</button></Link>
-          </div>
-
-          <div className="card hero">
-            <h3>✨ PENNY PRO</h3>
-            <div className="big">$19 <span className="sub">one-time payment</span></div>
-            <p className="sub" style={{ margin: "10px 0" }}>
-              ✓ Everything in Free<br />
-              ✓ 🎙️ AI Voice Logging &amp; 📸 Receipt Scanner<br />
-              ✓ 💀 AI Spending Roast &amp; Smart Insights<br />
-              ✓ Monthly Budgets, Goals, CSV &amp; 🔥 Daily Streak
-            </p>
-            <Link href="/dashboard"><button className="p" style={{ marginTop: 8 }}>Upgrade in app</button></Link>
-          </div>
-        </div>
-
-        <div id="faq" className="card" style={{ marginTop: 14 }}>
-          <h3>FREQUENTLY ASKED QUESTIONS</h3>
-          <div className="grid" style={{ gap: 14, marginTop: 10 }}>
-            {FAQS.map((f) => (
-              <div key={f.q}>
-                <b>{f.q}</b>
-                <p className="sub" style={{ margin: "4px 0 0", lineHeight: 1.5 }}>{f.a}</p>
-              </div>
+        <section id="features" className="lp-wrap lp-sec" aria-labelledby="features-title">
+          <h2 id="features-title">Features of the Penny personal finance app</h2>
+          <p className="lp-lead">Everything you need to track spending and save more, without the clutter.</p>
+          <div className="lp-feats">
+            {FEATURES.map((f) => (
+              <article className="card" key={f.h}>
+                <span className={"lp-tag" + (f.tag === "Pro" ? " pro" : "")}>{f.tag}</span>
+                <h3>{f.h}</h3>
+                <p>{f.p}</p>
+              </article>
             ))}
           </div>
-        </div>
+        </section>
 
-        <footer className="sub" style={{ textAlign: "center", padding: "28px 0 16px", display: "flex", flexDirection: "column", gap: 8 }}>
-          <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
-            <Link href="/dashboard" style={{ color: "inherit" }}>Open App</Link>
-            <a href="#features" style={{ color: "inherit" }}>Features</a>
-            <a href="#pricing" style={{ color: "inherit" }}>Pricing</a>
-            <a href="#faq" style={{ color: "inherit" }}>FAQ</a>
-            <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: "inherit" }}>Contact ({CONTACT_EMAIL})</a>
+        <section className="lp-wrap lp-sec" aria-labelledby="how-title">
+          <h2 id="how-title">How Penny works</h2>
+          <p className="lp-lead">From first sign-in to your first insight in under a minute.</p>
+          <ol className="lp-steps" style={{ listStyle: "none", padding: 0, margin: 0 }}>
+            {[
+              ["1. Sign in instantly", "Continue with Google or create an account with your email. No credit card or bank login needed."],
+              ["2. Log what you spend", "Type it, speak it, or scan a paper receipt. Penny fills in the details and you confirm."],
+              ["3. See and save", "Watch your balance, categories, and budgets update in real time, and keep your daily streak alive."],
+            ].map(([h, p]) => (
+              <li className="card" key={h}>
+                <h3>{h}</h3>
+                <p>{p}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        <section id="pricing" className="lp-wrap lp-sec" aria-labelledby="pricing-title">
+          <h2 id="pricing-title">Penny pricing: Free vs Pro</h2>
+          <p className="lp-lead">Start free forever. Upgrade once for $19 and keep Pro for life with no subscription.</p>
+          <div className="lp-tablewrap">
+            <table className="lp-table">
+              <caption className="sr">Penny Free plan versus Penny Pro plan feature comparison</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Feature</th>
+                  <th scope="col">Free<b>$0</b><span>forever</span></th>
+                  <th scope="col">Pro<b>$19</b><span>one-time payment</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                {ROWS.map(([name, free, pro]) => (
+                  <tr key={name}>
+                    <th scope="row">{name}</th>
+                    <td>{free ? <><span className="yes" aria-hidden>✓</span><span className="sr">Included</span></> : <><span className="no" aria-hidden>—</span><span className="sr">Not included</span></>}</td>
+                    <td>{pro ? <><span className="yes" aria-hidden>✓</span><span className="sr">Included</span></> : <><span className="no" aria-hidden>—</span><span className="sr">Not included</span></>}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-          <div>
-            © {YEAR} Penny (mypenny.net) · Built by <b style={{ color: "var(--tx)" }}>{FOUNDER}</b>. All rights reserved.
+          <div className="lp-cta">
+            <Link href="/dashboard" className="s big">Start free</Link>
+            <Link href="/dashboard" className="p big">Get Pro for $19</Link>
           </div>
-        </footer>
+          <p className="lp-note" style={{ textAlign: "center" }}>Secure checkout. One-time payment in USD.</p>
+        </section>
+
+        <section id="faq" className="lp-wrap lp-sec" aria-labelledby="faq-title">
+          <h2 id="faq-title">Frequently asked questions about Penny</h2>
+          <p className="lp-lead">Straight answers about features, pricing, and privacy.</p>
+          <div className="lp-faq">
+            {FAQS.map((f, i) => (
+              <details key={f.q} open={i === 0}>
+                <summary><h3>{f.q}</h3></summary>
+                <p>{f.a}</p>
+              </details>
+            ))}
+          </div>
+        </section>
+
+        <section className="lp-wrap lp-sec">
+          <div className="lp-final">
+            <h2 style={{ marginBottom: 8 }}>Take control of your money today</h2>
+            <p className="lp-lead" style={{ marginBottom: 20 }}>Create your free Penny account in under a minute.</p>
+            <Link href="/dashboard" className="p big">Get started free</Link>
+          </div>
+        </section>
       </main>
-    </>
+
+      <footer className="lp-foot">
+        <div className="lp-wrap">
+          <nav aria-label="Legal and navigation">
+            <Link href="/dashboard">Open App</Link>
+            <a href="#features">Features</a>
+            <a href="#pricing">Pricing</a>
+            <a href="#faq">FAQ</a>
+            <a href={`mailto:${CONTACT_EMAIL}`}>Contact</a>
+          </nav>
+          <div>
+            © {YEAR} Penny (mypenny.net) · Built by <strong style={{ color: "var(--tx)" }}>{FOUNDER}</strong>. All rights reserved.
+          </div>
+        </div>
+      </footer>
+    </div>
   );
 }
