@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Providers from "@/components/Providers";
+import { Analytics } from "@vercel/analytics/react";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://mypenny.net"),
@@ -73,6 +74,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <Providers>{children}</Providers>
+        <Analytics />
       </body>
     </html>
   );
