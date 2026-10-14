@@ -28,8 +28,8 @@ export const metadata: Metadata = {
   category: "finance",
   formatDetection: { email: false, address: false, telephone: false },
   icons: {
-    icon: "/icon.png?v=2",
-    apple: "/icon.png?v=2",
+    icon: "/icon.png?v=3",
+    apple: "/icon.png?v=3",
   },
   openGraph: {
     type: "website",

@@ -18,6 +18,10 @@ export const metadata: Metadata = {
   applicationName: "Penny",
   authors: [{ name: FOUNDER, url: SITE }],
   creator: FOUNDER,
+  icons: {
+    icon: "/icon.png?v=3",
+    apple: "/icon.png?v=3",
+  },
   keywords: [
     "Penny", "mypenny.net", "Penny finance app", "Yessine Ghariani", "personal finance tracker",
     "AI expense tracker", "expense tracker app", "budget planner", "AI receipt scanner",
