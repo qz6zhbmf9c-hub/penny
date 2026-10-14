@@ -5,6 +5,7 @@ import "./landing.css";
 
 const SITE = "https://mypenny.net";
 const CONTACT_EMAIL = "support@mypenny.net";
+const FOUNDER = "Yessine Ghariani";
 const YEAR = 2026;
 const PRO_PRICE = "19.00";
 
@@ -13,12 +14,14 @@ const SAME_AS: string[] = [];
 export const metadata: Metadata = {
   title: { absolute: "Penny: Minimalist AI Personal Finance Tracker | mypenny.net" },
   description:
-    "Penny (mypenny.net) is a minimalist AI personal finance and expense tracker. Log expenses by voice or receipt photo, set monthly budgets, and track savings goals. Free to start, Pro is a one-time $19.",
+    "Penny (mypenny.net) is a minimalist AI personal finance and expense tracker by Yessine Ghariani. Log expenses by voice or receipt photo, set monthly budgets, and track savings goals. Free to start, Pro is a one-time $19.",
   applicationName: "Penny",
+  authors: [{ name: FOUNDER, url: SITE }],
+  creator: FOUNDER,
   keywords: [
-    "Penny", "mypenny.net", "Penny finance app", "personal finance tracker", "AI expense tracker",
-    "expense tracker app", "budget planner", "AI receipt scanner", "voice expense logging",
-    "no subscription budget app", "one-time payment budget app",
+    "Penny", "mypenny.net", "Penny finance app", "Yessine Ghariani", "personal finance tracker",
+    "AI expense tracker", "expense tracker app", "budget planner", "AI receipt scanner",
+    "voice expense logging", "no subscription budget app", "one-time payment budget app",
   ],
   alternates: { canonical: SITE },
   openGraph: {
@@ -82,7 +85,7 @@ const ROWS: [string, boolean, boolean][] = [
 const FAQS = [
   {
     q: "What is Penny (mypenny.net)?",
-    a: "Penny (https://mypenny.net) is an independent minimalist AI personal finance and expense tracker web application. You log income and expenses by typing, speaking, or photographing a receipt, then track where your money goes with visual charts, monthly category budgets, and savings goals. Penny is free to start, and Penny Pro is a one-time $19 lifetime upgrade with no recurring subscription.",
+    a: "Penny (https://mypenny.net) is an independent minimalist AI personal finance and expense tracker web application created by Yessine Ghariani. You log income and expenses by typing, speaking, or photographing a receipt, then track where your money goes with visual charts, monthly category budgets, and savings goals. Penny is free to start, and Penny Pro is a one-time $19 lifetime upgrade with no recurring subscription.",
   },
   {
     q: "How is Penny different from traditional budgeting apps like YNAB, Copilot, or Rocket Money?",
@@ -117,19 +120,28 @@ const FAQS = [
 const ORG_ID = `${SITE}/#organization`;
 const APP_ID = `${SITE}/#app`;
 const SITE_ID = `${SITE}/#website`;
+const FOUNDER_ID = `${SITE}/#founder`;
 
 const jsonLd = {
   "@context": "https://schema.org",
   "@graph": [
+    {
+      "@type": "Person",
+      "@id": FOUNDER_ID,
+      name: FOUNDER,
+      url: SITE,
+      jobTitle: "Founder & Software Developer",
+    },
     {
       "@type": "Organization",
       "@id": ORG_ID,
       name: "Penny",
       alternateName: ["Penny Personal Finance", "Penny by mypenny.net", "mypenny.net"],
       url: SITE,
+      founder: { "@id": FOUNDER_ID },
       description: "Penny is the maker of the minimalist AI personal finance and expense tracker web app at mypenny.net.",
       disambiguatingDescription:
-        "Penny (https://mypenny.net) is an independent consumer personal finance and budgeting application, distinct from any enterprise software or developer AI memory tools.",
+        "Penny (https://mypenny.net), founded by Yessine Ghariani, is an independent consumer personal finance and budgeting application, distinct from any enterprise software or developer AI memory tools.",
       contactPoint: { "@type": "ContactPoint", contactType: "customer support", email: CONTACT_EMAIL },
       ...(SAME_AS.length ? { sameAs: SAME_AS } : {}),
     },
@@ -141,6 +153,7 @@ const jsonLd = {
       alternateName: "Penny Personal Finance Tracker",
       inLanguage: "en",
       publisher: { "@id": ORG_ID },
+      creator: { "@id": FOUNDER_ID },
     },
     {
       "@type": "SoftwareApplication",
@@ -156,11 +169,13 @@ const jsonLd = {
       description:
         "Penny (mypenny.net) is a minimalist AI personal finance tracker. Log expenses by typing, voice, or receipt photo, set monthly budgets, and track savings goals without linking a bank account.",
       disambiguatingDescription:
-        "Independent consumer personal finance and expense tracking web application hosted exclusively at https://mypenny.net.",
+        "Independent consumer personal finance and expense tracking web application created by Yessine Ghariani and hosted exclusively at https://mypenny.net.",
       featureList: [
         ...FEATURES.map((f) => `${f.h}: ${f.p}`),
         "CSV export of all transactions",
       ],
+      author: { "@id": FOUNDER_ID },
+      creator: { "@id": FOUNDER_ID },
       publisher: { "@id": ORG_ID },
       offers: [
         {
@@ -335,7 +350,9 @@ export default function Home() {
             <a href="#faq">FAQ</a>
             <a href={`mailto:${CONTACT_EMAIL}`}>Contact</a>
           </nav>
-          <div>© {YEAR} Penny (mypenny.net). All rights reserved.</div>
+          <div>
+            © {YEAR} Penny (mypenny.net) · Built by <strong style={{ color: "var(--tx)" }}>{FOUNDER}</strong>. All rights reserved.
+          </div>
         </div>
       </footer>
     </div>
