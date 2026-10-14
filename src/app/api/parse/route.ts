@@ -3,6 +3,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { allow } from "@/lib/otp";
 
+export const maxDuration = 60;
+export const dynamic = "force-dynamic";
+
 const CATS = ["Housing", "Food", "Transport", "Fun", "Health", "Shopping", "Bills", "Income"] as const;
 const MODELS = ["gemini-3.5-flash-lite", "gemini-3.8-flash", "gemini-flash-latest"];
 const YMD = /^\d{4}-\d{2}-\d{2}$/;
