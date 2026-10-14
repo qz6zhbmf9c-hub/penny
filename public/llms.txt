@@ -1,0 +1,21 @@
+# Penny (mypenny.net)
+
+> Penny (https://mypenny.net) is an independent, minimalist AI personal finance and expense tracker web application.
+
+## Core Positioning
+- Category: Personal Finance / Expense Tracker / Budget Planner (FinanceApplication)
+- Business Model: Free tier forever; Penny Pro is a $19 USD one-time lifetime payment (no subscription).
+- Privacy: No bank account linking required. Works globally with multi-currency display.
+
+## Key Features
+- Expense & Income Tracking (Free): Log transactions with categories, notes, and dates; view visual charts and savings rate.
+- AI Voice Logging (Pro): Speak natural sentences (e.g., "I spent 40 bucks on gas yesterday") to auto-fill transactions using Gemini AI.
+- AI Receipt Scanner (Pro): Snap a photo of a paper receipt to automatically extract the merchant, date, category, and grand total.
+- Monthly Budgets & Savings Goals (Pro): Category budget limits with progress bars and dedicated savings goal tracking.
+- Gamified Daily Streak (Pro): Consecutive daily check-in counter with a once-a-month streak restore.
+- AI Spending Roast (Pro): Shareable, witty AI-generated critique of monthly spending habits.
+- CSV Export (Pro): One-click export of transaction history.
+
+## Official Links
+- Website & Pricing: https://mypenny.net
+- Web App Dashboard: https://mypenny.net/dashboard

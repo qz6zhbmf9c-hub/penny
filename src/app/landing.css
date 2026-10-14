@@ -1,0 +1,50 @@
+.lp { --mut: var(--sub, #8b8fa3); }
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.lp-wrap{max-width:1050px;margin:0 auto;padding:0 20px}
+.lp-head{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--bd);padding-top:env(safe-area-inset-top,0px)}
+.lp-head .lp-wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:12px;padding-bottom:12px}
+.lp-nav{display:flex;gap:22px;font-size:14px}
+.lp-nav a{color:var(--mut);text-decoration:none}.lp-nav a:hover{color:var(--tx)}
+@media(max-width:640px){.lp-nav{display:none}}
+a.p,a.s{display:inline-block;text-decoration:none;border-radius:10px;padding:9px 16px;font:inherit;font-weight:600;cursor:pointer}
+a.p{background:linear-gradient(135deg,var(--ac),var(--ac2));color:#fff}
+a.s{background:var(--card);border:1px solid var(--bd);color:var(--tx)}
+a.big{padding:13px 24px;font-size:16px}
+.lp-hero{text-align:center;padding:72px 0 48px}
+.lp-eyebrow{display:inline-block;font-size:12px;font-weight:600;color:var(--mut);border:1px solid var(--bd);background:var(--card);border-radius:99px;padding:5px 12px}
+.lp h1{font-size:clamp(36px,6vw,60px);line-height:1.06;letter-spacing:-.03em;margin:18px auto 0;max-width:860px}
+.lp-grad{background:linear-gradient(135deg,var(--ac),var(--ac2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.lp-sub{color:var(--mut);font-size:18px;max-width:640px;margin:18px auto 0}
+.lp-cta{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:28px}
+.lp-note{font-size:13px;color:var(--mut);margin-top:14px}
+.lp-sec{padding:48px 0}
+.lp h2{font-size:clamp(26px,4vw,34px);letter-spacing:-.02em;margin:0 0 8px;text-align:center}
+.lp-lead{color:var(--mut);text-align:center;max-width:640px;margin:0 auto 28px}
+.lp-feats,.lp-steps{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(290px,1fr))}
+.lp .card h3{text-transform:none;letter-spacing:0;font-size:17px;color:var(--tx);margin:12px 0 6px}
+.lp .card p{margin:0;color:var(--mut);font-size:14px}
+.lp-tag{font-size:11px;font-weight:700;padding:2px 9px;border-radius:99px;background:var(--bd);color:var(--mut)}
+.lp-tag.pro{background:linear-gradient(135deg,var(--ac),var(--ac2));color:#fff}
+.lp-def{max-width:760px;margin:0 auto;font-size:17px;text-align:center}
+.lp-tablewrap{overflow-x:auto;border:1px solid var(--bd);border-radius:16px;background:var(--card)}
+.lp-table{width:100%;border-collapse:collapse;min-width:520px}
+.lp-table th,.lp-table td{padding:12px 16px;border-bottom:1px solid var(--bd);text-align:center}
+.lp-table th:first-child,.lp-table td:first-child{text-align:left}
+.lp-table tbody th{font-weight:500}
+.lp-table thead th{font-size:14px;vertical-align:bottom}
+.lp-table thead b{display:block;font-size:26px;letter-spacing:-.02em}
+.lp-table thead span{font-size:12px;color:var(--mut);font-weight:400}
+.lp-table tbody tr:last-child th,.lp-table tbody tr:last-child td{border-bottom:0}
+.yes{color:var(--ok);font-weight:800}.no{color:var(--mut)}
+.lp-faq{max-width:780px;margin:0 auto}
+.lp-faq details{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:0 16px;margin-bottom:10px}
+.lp-faq summary{cursor:pointer;padding:14px 0;list-style:none}
+.lp-faq summary::-webkit-details-marker{display:none}
+.lp-faq summary h3{display:inline;font-size:16px;margin:0;font-weight:600}
+.lp-faq details[open] summary{border-bottom:1px solid var(--bd);margin-bottom:12px}
+.lp-faq p{color:var(--mut);margin:0 0 14px}
+.lp-final{text-align:center;padding:40px 20px;border-radius:20px;background:linear-gradient(135deg,color-mix(in srgb,var(--ac) 18%,var(--card)),color-mix(in srgb,var(--ac2) 18%,var(--card)));border:1px solid var(--bd)}
+.lp-foot{border-top:1px solid var(--bd);margin-top:56px;padding:28px 0 36px;font-size:13px;color:var(--mut)}
+.lp-foot .lp-wrap{display:grid;gap:12px}
+.lp-foot nav{display:flex;gap:18px;flex-wrap:wrap}
+.lp-foot a{color:var(--mut);text-decoration:none}.lp-foot a:hover{color:var(--tx)}

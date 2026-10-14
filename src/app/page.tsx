@@ -1,243 +1,341 @@
-import Link from "next/link";
 import type { Metadata } from "next";
-import {
-  ArrowRight, Check, Download, LineChart, Lock, PiggyBank,
-  PieChart, ReceiptText, ShieldCheck, Sparkles, Target, Wallet,
-} from "lucide-react";
+import Link from "next/link";
+import "./globals.css";
+import "./landing.css";
+
+const SITE = "https://mypenny.net";
+const CONTACT_EMAIL = "support@mypenny.net";
+const YEAR = 2026;
+const PRO_PRICE = "19.00";
+
+const SAME_AS: string[] = [];
 
 export const metadata: Metadata = {
-  title: "Penny – Money, simplified",
+  title: { absolute: "Penny: Minimalist AI Personal Finance Tracker | mypenny.net" },
   description:
-    "Track every transaction, set monthly budgets and reach your savings goals with Penny, a simple personal finance dashboard.",
+    "Penny (mypenny.net) is a minimalist AI personal finance and expense tracker. Log expenses by voice or receipt photo, set monthly budgets, and track savings goals. Free to start, Pro is a one-time $19.",
+  applicationName: "Penny",
+  keywords: [
+    "Penny", "mypenny.net", "Penny finance app", "personal finance tracker", "AI expense tracker",
+    "expense tracker app", "budget planner", "AI receipt scanner", "voice expense logging",
+    "no subscription budget app", "one-time payment budget app",
+  ],
+  alternates: { canonical: SITE },
+  openGraph: {
+    type: "website",
+    url: SITE,
+    siteName: "Penny",
+    title: "Penny: The minimalist AI personal finance tracker",
+    description:
+      "Log expenses by voice or receipt photo, stay on budget and hit savings goals. Free to start, one-time $19 Pro upgrade.",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Penny: The minimalist AI personal finance tracker",
+    description: "Log expenses by voice or receipt photo, stay on budget and hit savings goals.",
+  },
 };
 
 const FEATURES = [
   {
-    icon: ReceiptText,
-    title: "Transactions",
-    text: "Log income and expenses in seconds. Search, filter by category and see exactly where your money goes.",
-    tag: "Free",
+    h: "Expense Tracking", tag: "Free",
+    p: "Log income and expenses with a category, note and date. Search your history and see your balance, savings rate and spending by category on one clean overview.",
   },
   {
-    icon: PieChart,
-    title: "Budgets",
-    text: "Set a monthly limit for each category and watch progress bars warn you before you overspend.",
-    tag: "Pro",
+    h: "Gemini AI Voice Logging", tag: "Pro",
+    p: "Say “I spent 40 bucks on gas yesterday” and Penny fills in the amount, category, note and date for you. You review it, then save.",
   },
   {
-    icon: Target,
-    title: "Savings goals",
-    text: "Create goals like an emergency fund or a trip, add money as you go and track your progress.",
-    tag: "Pro",
+    h: "AI Receipt Scanner", tag: "Pro",
+    p: "Snap a photo of any receipt. Penny reads the merchant, date and grand total and prepares the transaction, so you never type one out by hand.",
   },
+  {
+    h: "Smart Budgets & Goals", tag: "Pro",
+    p: "Set a monthly limit for each category and watch progress bars warn you before you overspend. Add savings goals and track how close you are.",
+  },
+  {
+    h: "Gamified Daily Streak", tag: "Pro",
+    p: "Build the habit of tracking with a daily streak, and restore a broken streak once a month so one missed day doesn't wipe your progress.",
+  },
+  {
+    h: "AI Spending Roast", tag: "Pro",
+    p: "Get a short, savage, shareable roast of your month's spending, written by AI from your real numbers.",
+  },
+] as const;
+
+const ROWS: [string, boolean, boolean][] = [
+  ["Unlimited transactions", true, true],
+  ["Overview dashboard and charts", true, true],
+  ["Spending by category", true, true],
+  ["Multi-currency display", true, true],
+  ["Monthly budgets per category", false, true],
+  ["Savings goals", false, true],
+  ["Smart spending insights", false, true],
+  ["AI voice logging", false, true],
+  ["AI receipt scanner", false, true],
+  ["AI spending roast", false, true],
+  ["CSV export", false, true],
+  ["Daily streak with monthly restore", false, true],
 ];
 
-const PRO_PERKS = [
-  { icon: Wallet, text: "Monthly budgets for every category" },
-  { icon: PiggyBank, text: "Unlimited savings goals with progress tracking" },
-  { icon: Sparkles, text: "Smart insights and month-end spending forecast" },
-  { icon: Download, text: "CSV export of all your transactions" },
-];
+const FAQS = [
+  {
+    q: "What is Penny (mypenny.net)?",
+    a: "Penny (https://mypenny.net) is an independent minimalist AI personal finance and expense tracker web application. You log income and expenses by typing, speaking, or photographing a receipt, then track where your money goes with visual charts, monthly category budgets, and savings goals. Penny is free to start, and Penny Pro is a one-time $19 lifetime upgrade with no recurring subscription.",
+  },
+  {
+    q: "How is Penny different from traditional budgeting apps like YNAB, Copilot, or Rocket Money?",
+    a: "Most budgeting apps charge $80 to $120 per year in subscriptions and require linking your private bank login credentials. Penny requires no bank linking for complete privacy and instant setup, uses AI voice and receipt scanning to make manual entry effortless, and charges a single one-time payment of $19 for Pro instead of a monthly subscription.",
+  },
+  {
+    q: "How does AI voice logging work?",
+    a: "Tap the microphone in the Transactions tab and say something like “I spent 40 bucks on gas yesterday”. Your browser's speech recognition turns your voice into text, and Google's Gemini AI parses that sentence into an amount, category, note, and date. Penny fills in the form for you to review before saving.",
+  },
+  {
+    q: "How does the AI receipt scanner work?",
+    a: "Take or upload a photo of any paper receipt. Penny compresses the image in your browser and uses Gemini Vision AI to extract the merchant name, date, category, and final grand total automatically.",
+  },
+  {
+    q: "How much does Penny Pro cost?",
+    a: "Penny Pro is a one-time payment of $19 USD with no subscription. It unlocks monthly budgets, savings goals, smart insights, AI voice logging, the AI receipt scanner, AI spending roasts, CSV export, and the Daily Streak with monthly restore.",
+  },
+  {
+    q: "Is Penny free to use?",
+    a: "Yes. The free plan includes unlimited transaction tracking, an overview dashboard with charts, spending by category, and multi-currency display forever. You only pay if you want to unlock the AI and Pro budgeting features.",
+  },
+  {
+    q: "Does Penny connect to my bank account?",
+    a: "No. Penny never asks for your bank credentials. You log transactions yourself in seconds via voice, receipt photo, or quick typing, which works globally with any bank or cash currency.",
+  },
+  {
+    q: "What is the Daily Streak?",
+    a: "The Daily Streak tracks consecutive days you check in on your finances to build a lasting money habit. Pro members also get a once-a-month streak restore if they miss a day.",
+  },
+] as const;
 
-function DashboardPreview() {
-  const bars = [38, 62, 48, 80, 66, 96];
-  return (
-    <div className="relative mx-auto mt-16 max-w-4xl">
-      <div className="absolute -inset-4 rounded-[2rem] bg-gradient-to-r from-indigo-500/30 to-violet-500/30 blur-3xl" />
-      <div className="relative rounded-2xl border border-[#272b38] bg-[#171a23]/90 p-4 shadow-2xl backdrop-blur sm:p-6">
-        <div className="mb-4 flex items-center gap-2">
-          <span className="h-3 w-3 rounded-full bg-red-400/70" />
-          <span className="h-3 w-3 rounded-full bg-amber-400/70" />
-          <span className="h-3 w-3 rounded-full bg-emerald-400/70" />
-          <span className="ml-3 text-xs text-[#8f97a8]">Penny · Overview</span>
-        </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="col-span-2 rounded-xl bg-gradient-to-br from-indigo-400 to-violet-400 p-4 text-[#0d0f15] sm:col-span-1">
-            <div className="text-xs font-semibold uppercase tracking-wide opacity-70">Balance</div>
-            <div className="mt-1 text-2xl font-extrabold">$12,480</div>
-          </div>
-          {[
-            ["Income", "$3,400", "text-emerald-400"],
-            ["Spending", "$2,115", "text-[#eef0f6]"],
-            ["Savings rate", "38%", "text-emerald-400"],
-          ].map(([l, v, c]) => (
-            <div key={l} className="rounded-xl border border-[#272b38] bg-[#0d0f15] p-4">
-              <div className="text-xs font-semibold uppercase tracking-wide text-[#8f97a8]">{l}</div>
-              <div className={`mt-1 text-2xl font-extrabold ${c}`}>{v}</div>
-            </div>
-          ))}
-        </div>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <div className="rounded-xl border border-[#272b38] bg-[#0d0f15] p-4">
-            <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#8f97a8]">Last 6 months</div>
-            <div className="flex h-24 items-end gap-3">
-              {bars.map((h, i) => (
-                <div key={i} className="flex-1 rounded-md bg-gradient-to-t from-indigo-500 to-violet-400" style={{ height: `${h}%` }} />
-              ))}
-            </div>
-          </div>
-          <div className="rounded-xl border border-[#272b38] bg-[#0d0f15] p-4">
-            <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#8f97a8]">Budgets</div>
-            {[
-              ["Food", 72, "bg-amber-400"],
-              ["Transport", 45, "bg-cyan-400"],
-              ["Fun", 91, "bg-pink-400"],
-            ].map(([n, p, c]) => (
-              <div key={n as string} className="mb-3 last:mb-0">
-                <div className="mb-1 flex justify-between text-xs text-[#8f97a8]"><span>{n}</span><span>{p}%</span></div>
-                <div className="h-2 overflow-hidden rounded-full bg-[#272b38]">
-                  <div className={`h-full rounded-full ${c}`} style={{ width: `${p}%` }} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+const ORG_ID = `${SITE}/#organization`;
+const APP_ID = `${SITE}/#app`;
+const SITE_ID = `${SITE}/#website`;
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": ORG_ID,
+      name: "Penny",
+      alternateName: ["Penny Personal Finance", "Penny by mypenny.net", "mypenny.net"],
+      url: SITE,
+      description: "Penny is the maker of the minimalist AI personal finance and expense tracker web app at mypenny.net.",
+      disambiguatingDescription:
+        "Penny (https://mypenny.net) is an independent consumer personal finance and budgeting application, distinct from any enterprise software or developer AI memory tools.",
+      contactPoint: { "@type": "ContactPoint", contactType: "customer support", email: CONTACT_EMAIL },
+      ...(SAME_AS.length ? { sameAs: SAME_AS } : {}),
+    },
+    {
+      "@type": "WebSite",
+      "@id": SITE_ID,
+      url: SITE,
+      name: "Penny",
+      alternateName: "Penny Personal Finance Tracker",
+      inLanguage: "en",
+      publisher: { "@id": ORG_ID },
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": APP_ID,
+      name: "Penny",
+      alternateName: ["Penny Personal Finance Tracker", "MyPenny Finance App"],
+      url: SITE,
+      applicationCategory: "FinanceApplication",
+      applicationSubCategory: "Personal Finance, Expense Tracker, Budget Planner",
+      operatingSystem: "Web, iOS, Android, macOS, Windows (Browser-based)",
+      browserRequirements: "Requires JavaScript. Works in Chrome, Safari, Edge, and modern mobile browsers.",
+      inLanguage: "en",
+      description:
+        "Penny (mypenny.net) is a minimalist AI personal finance tracker. Log expenses by typing, voice, or receipt photo, set monthly budgets, and track savings goals without linking a bank account.",
+      disambiguatingDescription:
+        "Independent consumer personal finance and expense tracking web application hosted exclusively at https://mypenny.net.",
+      featureList: [
+        ...FEATURES.map((f) => `${f.h}: ${f.p}`),
+        "CSV export of all transactions",
+      ],
+      publisher: { "@id": ORG_ID },
+      offers: [
+        {
+          "@type": "Offer",
+          name: "Penny Free",
+          price: "0",
+          priceCurrency: "USD",
+          url: `${SITE}/#pricing`,
+          availability: "https://schema.org/InStock",
+          description: "Unlimited transactions, overview dashboard and charts, spending by category, multi-currency display.",
+        },
+        {
+          "@type": "Offer",
+          name: "Penny Pro (Lifetime)",
+          price: PRO_PRICE,
+          priceCurrency: "USD",
+          url: `${SITE}/#pricing`,
+          availability: "https://schema.org/InStock",
+          seller: { "@id": ORG_ID },
+          description:
+            "One-time payment of $19 USD, no subscription. Unlocks budgets, savings goals, insights, AI voice logging, AI receipt scanner, AI roasts, CSV export, and the Daily Streak.",
+        },
+      ],
+    },
+    {
+      "@type": "FAQPage",
+      "@id": `${SITE}/#faq`,
+      url: SITE,
+      mainEntity: FAQS.map((f) => ({
+        "@type": "Question",
+        name: f.q,
+        acceptedAnswer: { "@type": "Answer", text: f.a },
+      })),
+    },
+  ],
+};
+
+const jsonLdString = JSON.stringify(jsonLd).replace(/</g, "\\u003c");
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#0d0f15] text-[#eef0f6] antialiased selection:bg-indigo-400/30">
-      {/* Nav */}
-      <header className="sticky top-0 z-50 border-b border-[#272b38]/70 bg-[#0d0f15]/80 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
-          <Link href="/" className="text-xl font-extrabold tracking-tight">
-            Penny<span className="bg-gradient-to-br from-indigo-400 to-violet-400 bg-clip-text text-transparent">.</span>
+    <div className="lp">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString }} />
+
+      <header className="lp-head">
+        <div className="lp-wrap">
+          <Link href="/" className="logo" style={{ textDecoration: "none", color: "inherit" }} aria-label="Penny home">
+            Penny<i>.</i>
           </Link>
-          <nav className="hidden items-center gap-7 text-sm text-[#8f97a8] md:flex">
-            <a href="#features" className="transition hover:text-white">Features</a>
-            <a href="#pricing" className="transition hover:text-white">Pricing</a>
+          <nav className="lp-nav" aria-label="Primary">
+            <a href="#features">Features</a>
+            <a href="#pricing">Pricing</a>
+            <a href="#faq">FAQ</a>
           </nav>
-          <Link href="/dashboard" className="rounded-xl bg-gradient-to-br from-indigo-400 to-violet-400 px-4 py-2 text-sm font-semibold text-[#0d0f15] transition hover:opacity-90">
-            Open dashboard
-          </Link>
+          <Link href="/dashboard" className="p">Open app</Link>
         </div>
       </header>
 
       <main>
-        {/* Hero */}
-        <section className="relative overflow-hidden px-5 pb-24 pt-20 sm:pt-28">
-          <div className="pointer-events-none absolute left-1/2 top-0 h-[480px] w-[900px] -translate-x-1/2 rounded-full bg-indigo-500/20 blur-[120px]" />
-          <div className="relative mx-auto max-w-3xl text-center">
-            <span className="inline-flex items-center gap-2 rounded-full border border-[#272b38] bg-[#171a23] px-3 py-1 text-xs font-medium text-[#8f97a8]">
-              <Sparkles className="h-3.5 w-3.5 text-violet-400" /> Personal finance, without the spreadsheet
-            </span>
-            <h1 className="mt-6 text-5xl font-extrabold leading-[1.05] tracking-tight sm:text-7xl">
-              Know where your money goes.{" "}
-              <span className="bg-gradient-to-br from-indigo-400 to-violet-400 bg-clip-text text-transparent">Keep more of it.</span>
-            </h1>
-            <p className="mx-auto mt-6 max-w-xl text-lg text-[#8f97a8]">
-              Penny turns your income and expenses into a clear dashboard, with budgets that keep you on track and goals that get you saving.
-            </p>
-            <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Link href="/dashboard" className="group inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-indigo-400 to-violet-400 px-6 py-3 font-semibold text-[#0d0f15] shadow-lg shadow-indigo-500/20 transition hover:opacity-90">
-                Get started free <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
-              </Link>
-              <a href="#pricing" className="rounded-xl border border-[#272b38] bg-[#171a23] px-6 py-3 font-semibold transition hover:border-indigo-400/50">
-                See pricing
-              </a>
-            </div>
-            <p className="mt-4 flex items-center justify-center gap-2 text-xs text-[#8f97a8]">
-              <ShieldCheck className="h-4 w-4" /> Sign in with Google. No credit card required.
-            </p>
+        <section className="lp-wrap lp-hero" aria-labelledby="hero-title">
+          <span className="lp-eyebrow">mypenny.net · AI Personal Finance App</span>
+          <h1 id="hero-title">
+            Penny: The <span className="lp-grad">minimalist AI</span> personal finance tracker.
+          </h1>
+          <p className="lp-sub">
+            Log expenses by voice or receipt photo, stay on budget and hit your savings goals—with no bank linking, no spreadsheets, and no monthly subscription.
+          </p>
+          <div className="lp-cta">
+            <Link href="/dashboard" className="p big">Get started free</Link>
+            <a href="#pricing" className="s big">See pricing</a>
           </div>
-          <DashboardPreview />
+          <p className="lp-note">Free forever plan · Pro is a one-time $19 · Sign in with Google or email</p>
         </section>
 
-        {/* Features */}
-        <section id="features" className="mx-auto max-w-6xl scroll-mt-20 px-5 py-20">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Everything you need to take control</h2>
-            <p className="mt-3 text-[#8f97a8]">Three simple tools that work together, with no bank linking or complicated setup.</p>
-          </div>
-          <div className="mt-12 grid gap-5 md:grid-cols-3">
-            {FEATURES.map(({ icon: Icon, title, text, tag }) => (
-              <div key={title} className="group rounded-2xl border border-[#272b38] bg-[#171a23] p-6 transition hover:-translate-y-1 hover:border-indigo-400/50">
-                <div className="flex items-center justify-between">
-                  <div className="grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-indigo-400 to-violet-400 text-[#0d0f15]">
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${tag === "Pro" ? "bg-violet-400/15 text-violet-300" : "bg-emerald-400/15 text-emerald-300"}`}>{tag}</span>
-                </div>
-                <h3 className="mt-5 text-lg font-bold">{title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-[#8f97a8]">{text}</p>
-              </div>
+        <section className="lp-wrap lp-sec" aria-labelledby="what-title">
+          <h2 id="what-title">What is Penny?</h2>
+          <p className="lp-def">
+            <strong>Penny</strong> (mypenny.net) is an independent web-based personal finance and expense tracker. It helps you record income and expenses in any currency, see where your money goes, set monthly category budgets, and hit savings goals. Built-in Gemini AI lets you log transactions hands-free by speaking a sentence or snapping a photo of a receipt.
+          </p>
+        </section>
+
+        <section id="features" className="lp-wrap lp-sec" aria-labelledby="features-title">
+          <h2 id="features-title">Features of the Penny personal finance app</h2>
+          <p className="lp-lead">Everything you need to track spending and save more, without the clutter.</p>
+          <div className="lp-feats">
+            {FEATURES.map((f) => (
+              <article className="card" key={f.h}>
+                <span className={"lp-tag" + (f.tag === "Pro" ? " pro" : "")}>{f.tag}</span>
+                <h3>{f.h}</h3>
+                <p>{f.p}</p>
+              </article>
             ))}
           </div>
         </section>
 
-        {/* Pricing */}
-        <section id="pricing" className="mx-auto max-w-4xl scroll-mt-20 px-5 py-20">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Simple pricing</h2>
-            <p className="mt-3 text-[#8f97a8]">Start free. Upgrade once, with no subscription.</p>
-          </div>
-          <div className="mt-12 grid gap-5 md:grid-cols-2">
-            {/* Free */}
-            <div className="rounded-2xl border border-[#272b38] bg-[#171a23] p-7">
-              <h3 className="text-lg font-bold">Free</h3>
-              <div className="mt-3 text-4xl font-extrabold">$0</div>
-              <p className="mt-1 text-sm text-[#8f97a8]">For getting a clear picture.</p>
-              <ul className="mt-6 space-y-3 text-sm">
-                {["Unlimited transactions", "Overview dashboard & charts", "Spending by category", "Multi-currency support"].map((t) => (
-                  <li key={t} className="flex items-start gap-3"><Check className="mt-0.5 h-4 w-4 flex-none text-emerald-400" />{t}</li>
+        <section className="lp-wrap lp-sec" aria-labelledby="how-title">
+          <h2 id="how-title">How Penny works</h2>
+          <p className="lp-lead">From first sign-in to your first insight in under a minute.</p>
+          <ol className="lp-steps" style={{ listStyle: "none", padding: 0, margin: 0 }}>
+            {[
+              ["1. Sign in instantly", "Continue with Google or create an account with your email. No credit card or bank login needed."],
+              ["2. Log what you spend", "Type it, speak it, or scan a paper receipt. Penny fills in the details and you confirm."],
+              ["3. See and save", "Watch your balance, categories, and budgets update in real time, and keep your daily streak alive."],
+            ].map(([h, p]) => (
+              <li className="card" key={h}>
+                <h3>{h}</h3>
+                <p>{p}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        <section id="pricing" className="lp-wrap lp-sec" aria-labelledby="pricing-title">
+          <h2 id="pricing-title">Penny pricing: Free vs Pro</h2>
+          <p className="lp-lead">Start free forever. Upgrade once for $19 and keep Pro for life with no subscription.</p>
+          <div className="lp-tablewrap">
+            <table className="lp-table">
+              <caption className="sr">Penny Free plan versus Penny Pro plan feature comparison</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Feature</th>
+                  <th scope="col">Free<b>$0</b><span>forever</span></th>
+                  <th scope="col">Pro<b>$19</b><span>one-time payment</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                {ROWS.map(([name, free, pro]) => (
+                  <tr key={name}>
+                    <th scope="row">{name}</th>
+                    <td>{free ? <><span className="yes" aria-hidden>✓</span><span className="sr">Included</span></> : <><span className="no" aria-hidden>—</span><span className="sr">Not included</span></>}</td>
+                    <td>{pro ? <><span className="yes" aria-hidden>✓</span><span className="sr">Included</span></> : <><span className="no" aria-hidden>—</span><span className="sr">Not included</span></>}</td>
+                  </tr>
                 ))}
-              </ul>
-              <Link href="/dashboard" className="mt-8 block rounded-xl border border-[#272b38] py-3 text-center font-semibold transition hover:border-indigo-400/50">
-                Start for free
-              </Link>
-            </div>
-            {/* Pro */}
-            <div className="relative rounded-2xl bg-gradient-to-br from-indigo-400 to-violet-400 p-[1.5px]">
-              <div className="h-full rounded-[calc(1rem-1px)] bg-[#171a23] p-7">
-                <div className="flex items-center justify-between">
-                  <h3 className="flex items-center gap-2 text-lg font-bold"><Sparkles className="h-4 w-4 text-violet-400" /> Pro</h3>
-                  <span className="rounded-full bg-violet-400/15 px-2.5 py-0.5 text-xs font-semibold text-violet-300">One-time payment</span>
-                </div>
-                <div className="mt-3 flex items-end gap-2">
-                  <span className="text-4xl font-extrabold">$19</span>
-                  <span className="pb-1 text-sm text-[#8f97a8]">once, yours for good</span>
-                </div>
-                <p className="mt-1 text-sm text-[#8f97a8]">Everything in Free, plus:</p>
-                <ul className="mt-6 space-y-3 text-sm">
-                  {PRO_PERKS.map(({ icon: Icon, text }) => (
-                    <li key={text} className="flex items-start gap-3"><Icon className="mt-0.5 h-4 w-4 flex-none text-violet-400" />{text}</li>
-                  ))}
-                </ul>
-                <Link href="/dashboard" className="mt-8 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-indigo-400 to-violet-400 py-3 text-center font-semibold text-[#0d0f15] transition hover:opacity-90">
-                  <Lock className="h-4 w-4" /> Get Pro
-                </Link>
-                <p className="mt-3 text-center text-xs text-[#8f97a8]">Secure checkout by Lemon Squeezy.</p>
-              </div>
-            </div>
+              </tbody>
+            </table>
+          </div>
+          <div className="lp-cta">
+            <Link href="/dashboard" className="s big">Start free</Link>
+            <Link href="/dashboard" className="p big">Get Pro for $19</Link>
+          </div>
+          <p className="lp-note" style={{ textAlign: "center" }}>Secure checkout. One-time payment in USD.</p>
+        </section>
+
+        <section id="faq" className="lp-wrap lp-sec" aria-labelledby="faq-title">
+          <h2 id="faq-title">Frequently asked questions about Penny</h2>
+          <p className="lp-lead">Straight answers about features, pricing, and privacy.</p>
+          <div className="lp-faq">
+            {FAQS.map((f, i) => (
+              <details key={f.q} open={i === 0}>
+                <summary><h3>{f.q}</h3></summary>
+                <p>{f.a}</p>
+              </details>
+            ))}
           </div>
         </section>
 
-        {/* Final CTA */}
-        <section className="px-5 pb-24">
-          <div className="mx-auto max-w-4xl rounded-3xl border border-[#272b38] bg-gradient-to-br from-indigo-500/15 to-violet-500/15 px-6 py-14 text-center">
-            <LineChart className="mx-auto h-8 w-8 text-violet-300" />
-            <h2 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">Start saving smarter today</h2>
-            <p className="mx-auto mt-3 max-w-md text-[#8f97a8]">Create your free account in under a minute.</p>
-            <Link href="/dashboard" className="mt-7 inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-indigo-400 to-violet-400 px-6 py-3 font-semibold text-[#0d0f15] transition hover:opacity-90">
-              Get started free <ArrowRight className="h-4 w-4" />
-            </Link>
+        <section className="lp-wrap lp-sec">
+          <div className="lp-final">
+            <h2 style={{ marginBottom: 8 }}>Take control of your money today</h2>
+            <p className="lp-lead" style={{ marginBottom: 20 }}>Create your free Penny account in under a minute.</p>
+            <Link href="/dashboard" className="p big">Get started free</Link>
           </div>
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-[#272b38]">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-5 py-8 text-sm text-[#8f97a8] sm:flex-row">
-          <div>© 2026 Penny by Yessine Ghariani. Built in Sfax, Tunisia. All rights reserved.</div>
-          <nav className="flex flex-wrap justify-center gap-x-6 gap-y-2">
-            <Link href="/privacy" className="transition hover:text-white">Privacy Policy</Link>
-            <Link href="/terms" className="transition hover:text-white">Terms of Service</Link>
-            <Link href="/refund" className="transition hover:text-white">Refund Policy</Link>
-            <a href="mailto:supportapp.penny@gmail.com" className="transition hover:text-white">Contact</a>
+      <footer className="lp-foot">
+        <div className="lp-wrap">
+          <nav aria-label="Legal and navigation">
+            <Link href="/dashboard">Open App</Link>
+            <a href="#features">Features</a>
+            <a href="#pricing">Pricing</a>
+            <a href="#faq">FAQ</a>
+            <a href={`mailto:${CONTACT_EMAIL}`}>Contact</a>
           </nav>
+          <div>© {YEAR} Penny (mypenny.net). All rights reserved.</div>
         </div>
       </footer>
     </div>
