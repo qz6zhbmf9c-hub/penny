@@ -219,72 +219,291 @@ const jsonLd = {
 
 const jsonLdString = JSON.stringify(jsonLd).replace(/</g, "\\u003c");
 
+const TICKER = [
+  "No bank login required",
+  "Gemini AI voice logging",
+  "Instant receipt vision",
+  "Multi-currency support",
+  "$19 one-time forever",
+  "Zero subscriptions",
+];
+
+const STEPS = [
+  ["1. Sign in instantly", "Continue with Google or create an account with your email. No credit card or bank login needed."],
+  ["2. Log what you spend", "Type it, speak it, or scan a paper receipt. Penny fills in the details and you confirm."],
+  ["3. See and save", "Watch your balance, categories, and budgets update in real time, and keep your daily streak alive."],
+];
+
+const Mark = ({ on }: { on: boolean }) =>
+  on ? (
+    <>
+      <span className="yes" aria-hidden="true">✓</span>
+      <span className="sr">Included</span>
+    </>
+  ) : (
+    <>
+      <span className="no" aria-hidden="true">—</span>
+      <span className="sr">Not included</span>
+    </>
+  );
+
+function BentoVisual({ index }: { index: number }) {
+  switch (index) {
+    case 0:
+      return (
+        <div className="b-vis b-vis-bars" aria-hidden="true">
+          <div className="mini-stat">
+            <span>Savings Rate</span>
+            <b className="mono pos">+34.2%</b>
+          </div>
+          <div className="mini-bars">
+            <i style={{ height: "38%" }} />
+            <i style={{ height: "56%" }} />
+            <i style={{ height: "44%" }} />
+            <i style={{ height: "78%" }} />
+            <i className="hi" style={{ height: "100%" }} />
+          </div>
+        </div>
+      );
+    case 1:
+      return (
+        <div className="b-vis b-vis-wave" aria-hidden="true">
+          <div className="mini-wave">
+            {Array.from({ length: 9 }, (_, k) => (
+              <i key={k} />
+            ))}
+          </div>
+          <span className="mini-pill mono">“$40 on gas” → ⛽ Transport</span>
+        </div>
+      );
+    case 2:
+      return (
+        <div className="b-vis b-vis-scan" aria-hidden="true">
+          <div className="mini-receipt">
+            <span className="mini-laser" />
+            <div className="mini-r-row">
+              <span>WHOLE FOODS</span>
+              <b className="mono">$64.80</b>
+            </div>
+            <div className="mini-r-lines">
+              <i />
+              <i />
+            </div>
+          </div>
+        </div>
+      );
+    case 3:
+      return (
+        <div className="b-vis b-vis-meter" aria-hidden="true">
+          <div className="mini-budget">
+            <div><span>Groceries</span><b className="mono">$310 / $450</b></div>
+            <u className="b-fill ok-fill" style={{ width: "68%" }} />
+          </div>
+          <div className="mini-budget">
+            <div><span>Emergency Goal</span><b className="mono">85%</b></div>
+            <u className="b-fill v-fill" style={{ width: "85%" }} />
+          </div>
+        </div>
+      );
+    case 4:
+      return (
+        <div className="b-vis b-vis-streak" aria-hidden="true">
+          <div className="streak-days">
+            {["M", "T", "W", "T", "F", "S", "S"].map((d, idx) => (
+              <span key={idx} className={idx < 6 ? "d-on" : "d-shield"}>
+                <b>{d}</b>
+                <i>{idx < 6 ? "✓" : "🛡️"}</i>
+              </span>
+            ))}
+          </div>
+        </div>
+      );
+    default:
+      return (
+        <div className="b-vis b-vis-roast" aria-hidden="true">
+          <div className="roast-bubble">
+            <span className="mono">AI ROAST · OCT</span>
+            <p>“47 iced lattes this month. At this point, buy the espresso machine.”</p>
+          </div>
+        </div>
+      );
+  }
+}
+
 export default function Home() {
   return (
     <div className="lp">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString }} />
 
-      <header className="lp-head">
-        <div className="lp-wrap">
-          <Link href="/" className="logo" style={{ textDecoration: "none", color: "inherit" }} aria-label="Penny home">
+      <header className="nav">
+        <div className="pill">
+          <Link href="/" className="brand" aria-label="Penny home">
             Penny<i>.</i>
           </Link>
-          <nav className="lp-nav" aria-label="Primary">
+          <span className="status">
+            <span className="live" aria-hidden="true" />
+            Live · Gemini AI
+          </span>
+          <nav aria-label="Primary">
             <a href="#features">Features</a>
             <a href="#pricing">Pricing</a>
             <a href="#faq">FAQ</a>
           </nav>
-          <Link href="/dashboard" className="p">Open app</Link>
+          <Link href="/dashboard" className="btn cta sm">
+            Open app
+          </Link>
         </div>
       </header>
 
       <main>
-        <section className="lp-wrap lp-hero" aria-labelledby="hero-title">
-          <span className="lp-eyebrow">mypenny.net · AI Personal Finance App</span>
-          <h1 id="hero-title">
-            Penny: The <span className="lp-grad">minimalist AI</span> personal finance tracker.
-          </h1>
-          <p className="lp-sub">
-            Log expenses by voice or receipt photo, stay on budget and hit your savings goals—with no bank linking, no spreadsheets, and no monthly subscription.
-          </p>
-          <div className="lp-cta">
-            <Link href="/dashboard" className="p big">Get started free</Link>
-            <a href="#pricing" className="s big">See pricing</a>
+        <section className="hero" aria-labelledby="hero-title">
+          <div className="aurora" aria-hidden="true">
+            <i />
+            <i />
           </div>
-          <p className="lp-note">Free forever plan · Pro is a one-time $19 · Sign in with Google or email</p>
+          <div className="wrap hero-in">
+            <span className="eyebrow">mypenny.net · Zero Bank Linking · $19 Lifetime Pro</span>
+            <h1 id="hero-title">
+              Penny: The <em>minimalist AI</em> personal finance tracker <em>without the bank login</em>.
+            </h1>
+            <p className="lead">
+              Log expenses by voice or receipt photo, stay on budget and hit your savings goals—with no bank linking, no spreadsheets, and no monthly subscription.
+            </p>
+            <div className="ctas">
+              <Link href="/dashboard" className="btn cta">
+                Get started free
+              </Link>
+              <a href="#pricing" className="btn ghost">
+                See pricing
+              </a>
+            </div>
+            <ul className="metrics" aria-label="Key facts">
+              <li>
+                <b className="mono">$0</b>
+                <span>to start forever</span>
+              </li>
+              <li>
+                <b className="mono">$19</b>
+                <span>Pro, paid once</span>
+              </li>
+              <li>
+                <b className="mono">0</b>
+                <span>bank logins required</span>
+              </li>
+            </ul>
+          </div>
+
+          <div className="wrap stage" aria-hidden="true">
+            <div className="deck">
+              <div className="gl stage-voice">
+                <div className="cap">
+                  <span className="live" />
+                  Gemini AI Voice Logging
+                </div>
+                <div className="eq">
+                  {Array.from({ length: 12 }, (_, i) => (
+                    <i key={i} />
+                  ))}
+                </div>
+                <p className="say">“I spent 40 bucks on gas yesterday”</p>
+                <div className="chips">
+                  <b className="mono neg">-$40.00</b>
+                  <b>⛽ Transport</b>
+                  <b>Yesterday</b>
+                  <b className="ok">✓ Ready to save</b>
+                </div>
+              </div>
+
+              <div className="gl stage-scan">
+                <div className="cap">
+                  <span className="live" />
+                  AI Receipt Vision
+                </div>
+                <div className="paper">
+                  <span className="laser" />
+                  <div className="paper-head">
+                    <p className="hl">Trader Joe&apos;s</p>
+                    <p className="mono dim">Oct 14</p>
+                  </div>
+                  <i />
+                  <i />
+                  <i />
+                  <p className="tot mono">Total: $64.80</p>
+                </div>
+              </div>
+
+              <div className="gl stage-roast">
+                <div className="cap rose">🔥 AI Spending Roast</div>
+                <p>
+                  “You spent <b className="mono">$184</b> on delivery apps this month. Your DoorDash driver is practically a legal dependent.”
+                </p>
+              </div>
+
+              <div className="gl stage-streak">
+                <div className="cap amber">
+                  🔥 <span className="mono">24</span> Day Streak
+                  <em className="rest">Monthly Restore Ready</em>
+                </div>
+                <div className="bar">
+                  <span>Groceries</span>
+                  <b className="mono">68%</b>
+                  <u style={{ width: "68%" }} />
+                </div>
+                <div className="bar hot">
+                  <span>Dining Out ⚠️</span>
+                  <b className="mono">92%</b>
+                  <u style={{ width: "92%" }} />
+                </div>
+              </div>
+            </div>
+          </div>
         </section>
 
-        <section className="lp-wrap lp-sec" aria-labelledby="what-title">
+        <div className="marquee" aria-hidden="true">
+          <div className="track">
+            {[0, 1].map((k) => (
+              <ul key={k}>
+                {TICKER.map((t) => (
+                  <li key={t + k}>{t}</li>
+                ))}
+              </ul>
+            ))}
+          </div>
+        </div>
+
+        <section className="wrap sec" aria-labelledby="what-title">
           <h2 id="what-title">What is Penny?</h2>
-          <p className="lp-def">
-            <strong>Penny</strong> (mypenny.net) is an independent web-based personal finance and expense tracker. It helps you record income and expenses in any currency, see where your money goes, set monthly category budgets, and hit savings goals. Built-in Gemini AI lets you log transactions hands-free by speaking a sentence or snapping a photo of a receipt.
+          <p className="def">
+            <strong>Penny (mypenny.net)</strong> is an independent web-based personal finance and expense tracker built by <strong>{FOUNDER}</strong>. It helps you record income and expenses in any currency, see where your money goes, set monthly category budgets, and hit savings goals. Built-in Gemini AI lets you log transactions hands-free by speaking a sentence or snapping a photo of a receipt—without ever asking for your bank login.
           </p>
         </section>
 
-        <section id="features" className="lp-wrap lp-sec" aria-labelledby="features-title">
-          <h2 id="features-title">Features of the Penny personal finance app</h2>
-          <p className="lp-lead">Everything you need to track spending and save more, without the clutter.</p>
-          <div className="lp-feats">
-            {FEATURES.map((f) => (
-              <article className="card" key={f.h}>
-                <span className={"lp-tag" + (f.tag === "Pro" ? " pro" : "")}>{f.tag}</span>
-                <h3>{f.h}</h3>
-                <p>{f.p}</p>
+        <section id="features" className="wrap sec" aria-labelledby="features-title">
+          <h2 id="features-title">
+            Features of the Penny <em>personal finance</em> app
+          </h2>
+          <p className="sub">Everything you need to track spending and save more, without the clutter.</p>
+          <div className="bento">
+            {FEATURES.map((f, i) => (
+              <article className={`gl bn b${i + 1}`} key={f.h}>
+                <div className="bn-copy">
+                  <span className={"tag mono" + (f.tag === "Pro" ? " pro" : "")}>{f.tag}</span>
+                  <h3>{f.h}</h3>
+                  <p>{f.p}</p>
+                </div>
+                <BentoVisual index={i} />
               </article>
             ))}
           </div>
         </section>
 
-        <section className="lp-wrap lp-sec" aria-labelledby="how-title">
+        <section className="wrap sec" aria-labelledby="how-title">
           <h2 id="how-title">How Penny works</h2>
-          <p className="lp-lead">From first sign-in to your first insight in under a minute.</p>
-          <ol className="lp-steps" style={{ listStyle: "none", padding: 0, margin: 0 }}>
-            {[
-              ["1. Sign in instantly", "Continue with Google or create an account with your email. No credit card or bank login needed."],
-              ["2. Log what you spend", "Type it, speak it, or scan a paper receipt. Penny fills in the details and you confirm."],
-              ["3. See and save", "Watch your balance, categories, and budgets update in real time, and keep your daily streak alive."],
-            ].map(([h, p]) => (
-              <li className="card" key={h}>
+          <p className="sub">From first sign-in to your first insight in under a minute.</p>
+          <ol className="steps">
+            {STEPS.map(([h, p], i) => (
+              <li className="gl" key={h}>
+                <b className="mono num">0{i + 1}</b>
                 <h3>{h}</h3>
                 <p>{p}</p>
               </li>
@@ -292,71 +511,111 @@ export default function Home() {
           </ol>
         </section>
 
-        <section id="pricing" className="lp-wrap lp-sec" aria-labelledby="pricing-title">
-          <h2 id="pricing-title">Penny pricing: Free vs Pro</h2>
-          <p className="lp-lead">Start free forever. Upgrade once for $19 and keep Pro for life with no subscription.</p>
-          <div className="lp-tablewrap">
-            <table className="lp-table">
+        <section id="pricing" className="wrap sec" aria-labelledby="pricing-title">
+          <h2 id="pricing-title">
+            Penny pricing: Free vs Pro, <em>one-time $19</em>
+          </h2>
+          <p className="sub">
+            Subscription budgeting apps typically charge $80 to $120 every single year. Start Penny free forever, or unlock Pro once for life.
+          </p>
+          <div className="plans">
+            <div className="gl plan">
+              <h3>Free Forever</h3>
+              <p className="price mono">$0</p>
+              <p>Unlimited transactions, overview dashboard, visual charts, and multi-currency support forever.</p>
+            </div>
+            <div className="gl plan beam">
+              <h3>Penny Pro Lifetime</h3>
+              <p className="price mono">
+                $19 <small>one-time payment</small>
+              </p>
+              <p>Everything in Free plus Gemini AI voice logging, receipt scanner, budgets, goals, AI roasts, CSV export, and streak restore.</p>
+            </div>
+          </div>
+          <div className="tablewrap">
+            <table className="matrix">
               <caption className="sr">Penny Free plan versus Penny Pro plan feature comparison</caption>
               <thead>
                 <tr>
                   <th scope="col">Feature</th>
-                  <th scope="col">Free<b>$0</b><span>forever</span></th>
-                  <th scope="col">Pro<b>$19</b><span>one-time payment</span></th>
+                  <th scope="col">
+                    Free <b className="mono">$0</b> <span>forever</span>
+                  </th>
+                  <th scope="col">
+                    Pro <b className="mono">$19</b> <span>one-time</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {ROWS.map(([name, free, pro]) => (
                   <tr key={name}>
                     <th scope="row">{name}</th>
-                    <td>{free ? <><span className="yes" aria-hidden>✓</span><span className="sr">Included</span></> : <><span className="no" aria-hidden>—</span><span className="sr">Not included</span></>}</td>
-                    <td>{pro ? <><span className="yes" aria-hidden>✓</span><span className="sr">Included</span></> : <><span className="no" aria-hidden>—</span><span className="sr">Not included</span></>}</td>
+                    <td>
+                      <Mark on={free} />
+                    </td>
+                    <td>
+                      <Mark on={pro} />
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <div className="lp-cta">
-            <Link href="/dashboard" className="s big">Start free</Link>
-            <Link href="/dashboard" className="p big">Get Pro for $19</Link>
+          <div className="ctas">
+            <Link href="/dashboard" className="btn ghost">
+              Start free
+            </Link>
+            <Link href="/dashboard" className="btn cta">
+              Get Pro for $19
+            </Link>
           </div>
-          <p className="lp-note" style={{ textAlign: "center" }}>Secure checkout. One-time payment in USD.</p>
+          <p className="fine">Secure checkout. One-time payment in USD. No recurring fees.</p>
         </section>
 
-        <section id="faq" className="lp-wrap lp-sec" aria-labelledby="faq-title">
+        <section id="faq" className="wrap sec" aria-labelledby="faq-title">
           <h2 id="faq-title">Frequently asked questions about Penny</h2>
-          <p className="lp-lead">Straight answers about features, pricing, and privacy.</p>
-          <div className="lp-faq">
+          <p className="sub">Straight answers about features, pricing, and privacy.</p>
+          <div className="faq">
             {FAQS.map((f, i) => (
               <details key={f.q} open={i === 0}>
-                <summary><h3>{f.q}</h3></summary>
+                <summary>
+                  <h3>{f.q}</h3>
+                  <span className="pm" aria-hidden="true" />
+                </summary>
                 <p>{f.a}</p>
               </details>
             ))}
           </div>
         </section>
 
-        <section className="lp-wrap lp-sec">
-          <div className="lp-final">
-            <h2 style={{ marginBottom: 8 }}>Take control of your money today</h2>
-            <p className="lp-lead" style={{ marginBottom: 20 }}>Create your free Penny account in under a minute.</p>
-            <Link href="/dashboard" className="p big">Get started free</Link>
+        <section className="wrap sec">
+          <div className="finale">
+            <h2>
+              Take control of your money, <em>today</em>
+            </h2>
+            <p className="sub">Create your free Penny account in under a minute.</p>
+            <Link href="/dashboard" className="btn cta">
+              Get started free
+            </Link>
           </div>
         </section>
       </main>
 
-      <footer className="lp-foot">
-        <div className="lp-wrap">
+      <footer className="foot">
+        <div className="wrap">
           <nav aria-label="Legal and navigation">
             <Link href="/dashboard">Open App</Link>
             <a href="#features">Features</a>
             <a href="#pricing">Pricing</a>
             <a href="#faq">FAQ</a>
+            <Link href="/privacy">Privacy Policy</Link>
+            <Link href="/terms">Terms of Service</Link>
+            <Link href="/refund">Refund Policy</Link>
             <a href={`mailto:${CONTACT_EMAIL}`}>Contact</a>
           </nav>
-          <div>
+          <p>
             © {YEAR} Penny (mypenny.net) · Built by <strong style={{ color: "var(--tx)" }}>{FOUNDER}</strong>. All rights reserved.
-          </div>
+          </p>
         </div>
       </footer>
     </div>
