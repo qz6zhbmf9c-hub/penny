@@ -1,4 +1,6 @@
 "use client";
+import { FREE_AI_LIMIT } from "@/lib/limits";
+import { useUsage } from "@/lib/useUsage";
 import { useEffect, useRef, useState } from "react";
 import { Bars, Donut } from "./Charts";
 import { Budgets, C, Goal, Tx, mTx, spendBy, sum, ym } from "@/lib/penny";
@@ -58,10 +60,16 @@ function RoastCard({ txs, f, isPro, onUpgrade }: { txs: Tx[]; f: Fmt } & Gate) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [copied, setCopied] = useState(false);
+  const [usage, setUsage] = useUsage(isPro);
   const currency = f(0).replace(/0$/, "");
+
+  const left = usage?.roastLeft ?? 0;
+  const exhausted = !isPro && left <= 0;
+  const open = isPro || left > 0 || !!roast;
 
   async function go() {
     if (busy) return;
+    if (exhausted) return onUpgrade();
     setErr(""); setBusy(true);
     try {
       const r = await fetch("/api/roast", {
@@ -70,8 +78,17 @@ function RoastCard({ txs, f, isPro, onUpgrade }: { txs: Tx[]; f: Fmt } & Gate) {
         body: JSON.stringify({ ...monthSummary(txs), currency }),
       });
       const j = await r.json().catch(() => ({}));
+      if (r.status === 402) {
+        setUsage((u) => ({ aiLeft: u?.aiLeft ?? 0, roastLeft: 0 }));
+        onUpgrade();
+        return;
+      }
       if (!r.ok) return setErr(j.error ?? "Couldn't roast you this time.");
       setRoast(j.roast);
+      if (typeof j.roastLeft === "number") {
+        const rl = j.roastLeft;
+        setUsage((u) => ({ aiLeft: u?.aiLeft ?? 0, roastLeft: rl }));
+      }
     } catch {
       setErr("Couldn't reach the roast machine.");
     } finally {
@@ -86,41 +103,46 @@ function RoastCard({ txs, f, isPro, onUpgrade }: { txs: Tx[]; f: Fmt } & Gate) {
       await navigator.clipboard.writeText(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
-    } catch {}
+    } catch { }
   }
 
   return (
-    <div className="card" style={{ marginTop: 14, minHeight: 130 }}>
-      <h3>💀 AI roast</h3>
-      {isPro ? (
+    <div className="card" style={{ marginTop: 14, minHeight: 130, position: "relative", overflow: "hidden" }}>
+      <h3>💀 AI Roast</h3>
+      {open ? (
         <>
-          {roast && <p style={roastBoxStyle}>{roast}</p>}
-          {err && <p className="sub neg" style={{ margin: "0 0 10px" }} role="alert">{err}</p>}
+          {roast && <p className="roast" style={{ fontSize: "16px", fontWeight: "500", borderLeft: "4px solid var(--tx)", paddingLeft: "12px", margin: 0 }}>{roast}</p>}
+          {err && <p className="sub neg" role="alert" style={{ margin: "10px 0 0" }}>{err}</p>}
           {!roast && !err && !busy && (
             <p className="sub" style={{ margin: "0 0 10px" }}>
-              Penny reads this month&apos;s spending and tells you what it really thinks.
+              Penny reads this month's spending and verbally destroys your financial choices.
             </p>
           )}
           <div className="form" style={{ marginTop: roast ? 12 : 0 }}>
-            <button className="p" onClick={go} disabled={busy} style={{ flex: "0 0 auto", opacity: busy ? 0.7 : 1 }}>
-              {busy ? "💀 Sharpening the insults…" : roast ? "💀 Roast me again" : "💀 Roast my spending"}
+            <button className="p" onClick={go} disabled={busy} style={{ flex: "0 0 auto", opacity: busy ? 0.7 : 1, background: busy ? "#333" : "var(--tx)" }}>
+              {busy ? "💀 Loading insults..." : roast ? `💀 Roast me again${exhausted ? " 🔒" : ""}` : "💀 Roast my spending"}
             </button>
             {roast && (
               <button className="s" onClick={share} style={{ flex: "0 0 auto" }}>
-                {copied ? "Copied ✓" : "Share"}
+                {copied ? "Copied ✓" : "Share to IG"}
               </button>
             )}
           </div>
+          {!isPro && usage && (
+            <p className="sub" style={{ margin: "10px 0 0", color: left > 0 ? "var(--ok)" : "var(--tx)" }}>
+              {left > 0 ? `🔥 You have ${left} free roast remaining. Make it count.` : "🔒 Free roast used. Go Pro to keep getting yelled at."}
+            </p>
+          )}
         </>
       ) : (
         <>
-          <p style={{ ...roastBoxStyle, filter: "blur(4px)", userSelect: "none" }}>
-            You spent $400 on Uber but only walked 12 steps. Your &quot;Food&quot; category is just delivery apps in a trench coat.
+          <p className="roast" style={{ filter: "blur(5px)", userSelect: "none", opacity: 0.6, margin: 0 }}>
+            You spent $140 on DoorDash this week but your fridge is full of rotting spinach. Your 'budget' is just vibes and denial. 
           </p>
-          <div className="lock">
-            <b>🔒 Pro feature</b>
-            <span className="sub">Get roasted on your real spending</span>
-            <button className="p" onClick={onUpgrade}>Upgrade</button>
+          <div className="lock" style={{ position: "absolute", top: "45%", left: "50%", transform: "translate(-50%, -50%)", textAlign: "center", width: "100%", background: "transparent" }}>
+            <b style={{ fontSize: "18px" }}>🔒 Pro Feature</b>
+            <p className="sub" style={{ margin: "4px 0 12px" }}>Get unlimited roasts of your actual spending.</p>
+            <button className="p" onClick={onUpgrade} style={{ padding: "6px 16px", margin: "0 auto", display: "block" }}>Unlock for $19</button>
           </div>
         </>
       )}
@@ -182,9 +204,12 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
   const [listening, setListening] = useState(false);
   const [parsing, setParsing] = useState(false);
   const [scanning, setScanning] = useState(false);
+  const [usage, setUsage] = useUsage(isPro);
   const recRef = useRef<any>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const transcriptRef = useRef("");
+
+  const outOfCredits = !isPro && usage !== null && usage.aiLeft <= 0;
 
   useEffect(() => () => { 
     if (recRef.current) {
@@ -201,6 +226,16 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   };
 
+  function paywall() {
+    notify("🤖 Compute isn't free. You've hit your limit! Unlock Lifetime Pro for $19.");
+    onUpgrade();
+  }
+
+  function handleLimit() {
+    setUsage((u) => ({ aiLeft: 0, roastLeft: u?.roastLeft ?? 0 }));
+    paywall();
+  }
+
   async function add() {
     if (!+a) return notify("Enter an amount");
     await onAdd({ d, t, c: t === "in" ? "Income" : c, n, a: +a });
@@ -213,9 +248,13 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
     navigator.clipboard.writeText(s).then(() => notify("CSV copied"), () => notify("Copy not allowed"));
   }
 
-  function applyParsed(j: { t: "in" | "out"; a: number; c: string; n: string; d: string }, source: string) {
+  function applyParsed(j: { t: "in" | "out"; a: number; c: string; n: string; d: string; aiLeft?: number }, source: string) {
     setT(j.t); setA(String(j.a)); setN(j.n); setD(j.d);
     if (j.t === "out") setC(j.c);
+    if (typeof j.aiLeft === "number") {
+      const left = j.aiLeft;
+      setUsage((u) => ({ aiLeft: left, roastLeft: u?.roastLeft ?? 0 }));
+    }
     notify(`Filled from ${source} ✓ Review, then tap Add`);
   }
 
@@ -228,6 +267,7 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
         body: JSON.stringify({ text, today: localToday() }),
       });
       const j = await r.json().catch(() => ({}));
+      if (r.status === 402) return handleLimit();
       if (!r.ok) return notify(j.error ?? "Couldn't understand that");
       applyParsed(j, "voice");
     } catch {
@@ -238,15 +278,13 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
   }
 
   function mic() {
-    if (!isPro) {
-      notify("🔒 Voice logging is a Pro feature!");
-      return;
-    }
+    if (outOfCredits) return paywall();
+    
     if (listening && recRef.current) { 
       try { recRef.current.stop(); } catch {} 
       return; 
     }
-    if (parsing) return;
+    if (parsing || scanning) return;
 
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) return notify("Voice input isn't supported in this browser. Try Chrome or Safari.");
@@ -329,10 +367,7 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
   }
 
   function receipt() {
-    if (!isPro) {
-      notify("🔒 Receipt scanning is a Pro feature!");
-      return;
-    }
+    if (outOfCredits) return paywall();
     if (parsing || scanning || listening) return;
     fileRef.current?.click();
   }
@@ -357,6 +392,7 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
         body: JSON.stringify({ image, mime: "image/jpeg", today: localToday() }),
       });
       const j = await r.json().catch(() => ({}));
+      if (r.status === 402) return handleLimit();
       if (!r.ok) return notify(j.error ?? "Couldn't read that receipt");
       applyParsed(j, "receipt");
     } catch {
@@ -378,10 +414,10 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
             onClick={mic}
             disabled={parsing}
             aria-label={listening ? "Stop recording" : "Log by voice"}
-            title={isPro ? "Log by voice" : "Voice logging (Pro)"}
+            title={outOfCredits ? "Voice logging (Pro)" : "Log by voice"}
             style={{ flex: "0 0 auto", fontSize: 18 }}
           >
-            {parsing && !scanning ? "⏳" : listening ? "🔴" : isPro ? "🎙️" : "🎙️🔒"}
+            {parsing && !scanning ? "⏳" : listening ? "🔴" : outOfCredits ? "🎙️🔒" : "🎙️"}
           </button>
           <button
             type="button"
@@ -389,10 +425,10 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
             onClick={receipt}
             disabled={parsing || listening}
             aria-label="Scan a receipt"
-            title={isPro ? "Scan a receipt" : "Receipt scanner (Pro)"}
+            title={outOfCredits ? "Receipt scanner (Pro)" : "Scan a receipt"}
             style={{ flex: "0 0 auto", fontSize: 18 }}
           >
-            {scanning ? "📸⏳" : isPro ? "📸" : "📸🔒"}
+            {scanning ? "📸⏳" : outOfCredits ? "📸🔒" : "📸"}
           </button>
           <input ref={fileRef} type="file" accept="image/*" capture="environment" hidden onChange={onFile} />
           <select value={t} onChange={(e) => setT(e.target.value as "in" | "out")}><option value="out">Expense</option><option value="in">Income</option></select>
@@ -408,6 +444,18 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
            parsing ? "Understanding what you said…" :
            "🎙️ Say “I spent 40 bucks on gas yesterday”  ·  📸 or snap a photo of a receipt"}
         </p>
+        {!isPro && usage && (
+          <div className="sub" style={{ margin: "12px 0 0", padding: "10px", background: "rgba(138, 43, 226, 0.1)", borderRadius: "8px", border: "1px solid rgba(138, 43, 226, 0.2)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span>⚡ <b>{usage.aiLeft} of {FREE_AI_LIMIT}</b> free AI actions left</span>
+              {usage.aiLeft === 0 ? (
+                <button type="button" onClick={onUpgrade} style={{ background: "var(--tx)", color: "#fff", border: "none", padding: "4px 10px", borderRadius: "6px", cursor: "pointer", fontWeight: "bold" }}>Unlock Pro</button>
+              ) : (
+                <span style={{ fontSize: "12px", opacity: 0.7 }}>Lifetime Pro: $19</span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
       <div className="card" style={{ marginTop: 14 }}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>

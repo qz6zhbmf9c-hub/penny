@@ -57,6 +57,9 @@ model User {
   transactions  Transaction[]
   budgets       Budget[]
   goals         Goal[]
+
+  freeAiActionsUsed Int @default(0)
+  freeRoastsUsed    Int @default(0)
 }
 
 model VerificationToken {
