@@ -5,7 +5,7 @@ import { allow } from "@/lib/otp";
 import { aiLeft, refund, reserve } from "@/lib/quota";
 
 const CATS = ["Housing", "Food", "Transport", "Fun", "Health", "Shopping", "Bills"] as const;
-const MODEL = "gemini-1.5-flash";
+const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 const YMD = /^\d{4}-\d{2}-\d{2}$/;
 const MIMES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_B64 = 3_000_000;
@@ -47,22 +47,38 @@ async function run(image: string, mime: string, today: string, apiKey: string): 
           }],
           generationConfig: {
             temperature: 0,
+            thinkingConfig: { thinkingBudget: 0 },
             responseMimeType: "application/json",
             responseSchema: {
               type: "OBJECT",
-              properties: { t: { type: "STRING", enum: ["out"] }, a: { type: "NUMBER" }, c: { type: "STRING", enum: [...CATS] }, n: { type: "STRING" }, d: { type: "STRING" } },
+              properties: {
+                t: { type: "STRING", enum: ["out"] },
+                a: { type: "NUMBER" },
+                c: { type: "STRING", enum: [...CATS] },
+                n: { type: "STRING" },
+                d: { type: "STRING" },
+              },
               required: ["t", "a", "c", "n", "d"],
             },
           },
         }),
       }
     );
-    if (!res.ok) return { error: "The AI service is busy. Try again in a moment.", status: 502 };
+
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "Unknown error");
+      return { error: `Google API Error ${res.status}: ${errText.substring(0, 140)}`, status: 502 };
+    }
+
     const data = await res.json();
-    const o = JSON.parse(data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "{}");
+    const parts = data?.candidates?.[0]?.content?.parts ?? [];
+    const textPart = parts.find((p: any) => !p.thought)?.text || parts[0]?.text || "{}";
+    const o = JSON.parse(textPart);
 
     const a = Math.round(Number(o.a) * 100) / 100;
-    if (!Number.isFinite(a) || a <= 0 || a > 1_000_000_000) return { error: "I couldn't find a total. Try a flatter, brighter photo.", status: 422 };
+    if (!Number.isFinite(a) || a <= 0 || a > 1_000_000_000) {
+      return { error: "I couldn't find a total. Try a flatter, brighter photo.", status: 422 };
+    }
     const c = (CATS as readonly string[]).includes(o.c) ? (o.c as string) : "Shopping";
     let d = YMD.test(String(o.d)) && !isNaN(Date.parse(o.d)) ? String(o.d) : today;
     if (d > today) d = today;

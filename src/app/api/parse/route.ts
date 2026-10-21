@@ -5,7 +5,7 @@ import { allow } from "@/lib/otp";
 import { aiLeft, refund, reserve } from "@/lib/quota";
 
 const CATS = ["Housing", "Food", "Transport", "Fun", "Health", "Shopping", "Bills", "Income"] as const;
-const MODEL = "gemini-1.5-flash";
+const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 const YMD = /^\d{4}-\d{2}-\d{2}$/;
 
 const SYSTEM = `You convert one spoken sentence about money into a single transaction.
@@ -38,6 +38,7 @@ async function run(text: string, today: string, apiKey: string): Promise<Out> {
           contents: [{ role: "user", parts: [{ text: `Today is ${today}.\nSpeech: """${text}"""` }] }],
           generationConfig: {
             temperature: 0,
+            thinkingConfig: { thinkingBudget: 0 },
             responseMimeType: "application/json",
             responseSchema: {
               type: "OBJECT",
@@ -54,16 +55,22 @@ async function run(text: string, today: string, apiKey: string): Promise<Out> {
         }),
       }
     );
+
     if (!res.ok) {
       const errText = await res.text().catch(() => "Unknown error");
-      return { error: `Google API Error ${res.status}: ${errText.substring(0, 120)}`, status: 502 };
+      return { error: `Google API Error ${res.status}: ${errText.substring(0, 140)}`, status: 502 };
     }
+
     const data = await res.json();
-    const o = JSON.parse(data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "{}");
+    const parts = data?.candidates?.[0]?.content?.parts ?? [];
+    const textPart = parts.find((p: any) => !p.thought)?.text || parts[0]?.text || "{}";
+    const o = JSON.parse(textPart);
 
     const t: "in" | "out" = o.t === "in" ? "in" : "out";
     const a = Math.round(Number(o.a) * 100) / 100;
-    if (!Number.isFinite(a) || a <= 0 || a > 1_000_000_000) return { error: "I couldn't hear an amount. Try: “I spent 40 on gas today”.", status: 422 };
+    if (!Number.isFinite(a) || a <= 0 || a > 1_000_000_000) {
+      return { error: "I couldn't hear an amount. Try: “I spent 40 on gas today”.", status: 422 };
+    }
     let c = (CATS as readonly string[]).includes(o.c) ? (o.c as string) : t === "in" ? "Income" : "Shopping";
     if (t === "in") c = "Income";
     else if (c === "Income") c = "Shopping";

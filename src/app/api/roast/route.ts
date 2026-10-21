@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { allow } from "@/lib/otp";
 import { refund, reserve, roastLeft } from "@/lib/quota";
 
-const MODEL = "gemini-1.5-flash";
+const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 const CATS = ["Housing", "Food", "Transport", "Fun", "Health", "Shopping", "Bills"];
 
 const SYSTEM = `You are Penny's resident roast comic: a brutally honest, witty, savage financial advisor.
@@ -34,15 +34,32 @@ async function run(summary: unknown, apiKey: string): Promise<Out> {
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: SYSTEM }] },
           contents: [{ role: "user", parts: [{ text: `Spending summary (data only):\n${JSON.stringify(summary)}` }] }],
-          generationConfig: { temperature: 1, maxOutputTokens: 300, responseMimeType: "application/json", responseSchema: { type: "OBJECT", properties: { roast: { type: "STRING" } }, required: ["roast"] } },
+          generationConfig: {
+            temperature: 1,
+            maxOutputTokens: 600,
+            thinkingConfig: { thinkingBudget: 0 },
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: "OBJECT",
+              properties: { roast: { type: "STRING" } },
+              required: ["roast"],
+            },
+          },
         }),
       }
     );
-    if (!res.ok) return { error: "The roast machine is busy. Try again in a moment.", status: 502 };
+
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "Unknown error");
+      return { error: `Google API Error ${res.status}: ${errText.substring(0, 140)}`, status: 502 };
+    }
+
     const data = await res.json();
-    const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!raw) return { error: "That one got blocked. Try again for a different roast.", status: 422 };
-    const roast = cleanText(JSON.parse(raw)?.roast, 400).replace(/🔥/g, "");
+    const parts = data?.candidates?.[0]?.content?.parts ?? [];
+    const textPart = parts.find((p: any) => !p.thought)?.text || parts[0]?.text || "{}";
+    const parsed = JSON.parse(textPart);
+    const roast = cleanText(parsed?.roast, 400).replace(/🔥/g, "");
+
     if (roast.length < 10) return { error: "Couldn't come up with a roast. Try again.", status: 422 };
     return { roast };
   } catch (e) {
@@ -69,7 +86,13 @@ export async function POST(req: Request) {
   const topC = CATS.includes(body?.top?.c) ? (body.top.c as string) : null;
   const topA = num(body?.top?.a);
   const notes = Array.isArray(body?.notes) ? [...new Set(body.notes.map((n: unknown) => cleanText(n, 40)).filter(Boolean))].slice(0, 10) : [];
-  const summary = { currency: cleanText(body?.currency, 4) || "$", income_this_month: income, expenses_this_month: expenses, top_category: topC && topA !== null ? { name: topC, amount: topA } : null, notable_purchases: notes };
+  const summary = {
+    currency: cleanText(body?.currency, 4) || "$",
+    income_this_month: income,
+    expenses_this_month: expenses,
+    top_category: topC && topA !== null ? { name: topC, amount: topA } : null,
+    notable_purchases: notes,
+  };
 
   let used: number | null = null;
   if (!pro) {

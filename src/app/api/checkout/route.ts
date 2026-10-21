@@ -21,7 +21,7 @@ export async function POST() {
   lemonSqueezySetup({ apiKey: LEMONSQUEEZY_API_KEY });
 
   // Fallback directly to your live production domain just in case NEXTAUTH_URL is missing
-  const baseUrl = process.env.NEXTAUTH_URL || "https://penny-nine-gamma.vercel.app";
+  const baseUrl = process.env.NEXTAUTH_URL || "https://mypenny.net";
 
   const { data, error } = await createCheckout(LEMONSQUEEZY_STORE_ID, LEMONSQUEEZY_VARIANT_ID, {
     checkoutData: {
