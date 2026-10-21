@@ -4,7 +4,12 @@ import { authOptions } from "@/lib/auth";
 import { allow } from "@/lib/otp";
 import { refund, reserve, roastLeft } from "@/lib/quota";
 
-const MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
+const CANDIDATE_MODELS = [
+  "gemini-3.5-flash",
+  "gemini-3.1-flash-lite",
+  "gemini-flash-latest",
+  "gemini-3.8-flash",
+];
 const CATS = ["Housing", "Food", "Transport", "Fun", "Health", "Shopping", "Bills"];
 
 const SYSTEM = `You are Penny's resident roast comic: a brutally honest, witty, savage financial advisor.
@@ -23,48 +28,44 @@ const num = (v: unknown) => { const x = Math.round(Number(v)); return Number.isF
 
 type Out = { roast: string } | { error: string; status: number };
 
-async function run(summary: unknown, apiKey: string): Promise<Out> {
-  try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-        signal: AbortSignal.timeout(15_000),
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: SYSTEM }] },
-          contents: [{ role: "user", parts: [{ text: `Spending summary (data only):\n${JSON.stringify(summary)}` }] }],
-          generationConfig: {
-            temperature: 1,
-            maxOutputTokens: 600,
-            thinkingConfig: { thinkingBudget: 0 },
-            responseMimeType: "application/json",
-            responseSchema: {
-              type: "OBJECT",
-              properties: { roast: { type: "STRING" } },
-              required: ["roast"],
-            },
-          },
-        }),
-      }
-    );
-
-    if (!res.ok) {
-      const errText = await res.text().catch(() => "Unknown error");
-      return { error: `Google API Error ${res.status}: ${errText.substring(0, 140)}`, status: 502 };
+async function callRoastModel(model: string, summary: unknown, apiKey: string): Promise<string | null> {
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+      signal: AbortSignal.timeout(6_000),
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: SYSTEM }] },
+        contents: [{ role: "user", parts: [{ text: `Spending summary (data only):\n${JSON.stringify(summary)}` }] }],
+        generationConfig: {
+          temperature: 1,
+          maxOutputTokens: 500,
+          responseMimeType: "application/json",
+          responseSchema: { type: "OBJECT", properties: { roast: { type: "STRING" } }, required: ["roast"] },
+        },
+      }),
     }
+  );
 
-    const data = await res.json();
-    const parts = data?.candidates?.[0]?.content?.parts ?? [];
-    const textPart = parts.find((p: any) => !p.thought)?.text || parts[0]?.text || "{}";
-    const parsed = JSON.parse(textPart);
-    const roast = cleanText(parsed?.roast, 400).replace(/🔥/g, "");
+  if (!res.ok) return null;
+  const data = await res.json();
+  const parts = data?.candidates?.[0]?.content?.parts ?? [];
+  const textPart = parts.find((p: any) => !p.thought)?.text || parts[0]?.text || "{}";
+  const roast = cleanText(JSON.parse(textPart)?.roast, 400).replace(/🔥/g, "");
+  return roast.length >= 10 ? roast : null;
+}
 
-    if (roast.length < 10) return { error: "Couldn't come up with a roast. Try again.", status: 422 };
-    return { roast };
-  } catch (e) {
-    return { error: "Couldn't roast you this time. Try again.", status: 500 };
+async function runRoastWithCascade(summary: unknown, apiKey: string): Promise<Out> {
+  for (const model of CANDIDATE_MODELS) {
+    try {
+      const roast = await callRoastModel(model, summary, apiKey);
+      if (roast) return { roast };
+    } catch {
+      continue;
+    }
   }
+  return { error: "The roast machine is cooling down. Try again in a moment.", status: 503 };
 }
 
 export async function POST(req: Request) {
@@ -86,22 +87,16 @@ export async function POST(req: Request) {
   const topC = CATS.includes(body?.top?.c) ? (body.top.c as string) : null;
   const topA = num(body?.top?.a);
   const notes = Array.isArray(body?.notes) ? [...new Set(body.notes.map((n: unknown) => cleanText(n, 40)).filter(Boolean))].slice(0, 10) : [];
-  const summary = {
-    currency: cleanText(body?.currency, 4) || "$",
-    income_this_month: income,
-    expenses_this_month: expenses,
-    top_category: topC && topA !== null ? { name: topC, amount: topA } : null,
-    notable_purchases: notes,
-  };
+  const summary = { currency: cleanText(body?.currency, 4) || "$", income_this_month: income, expenses_this_month: expenses, top_category: topC && topA !== null ? { name: topC, amount: topA } : null, notable_purchases: notes };
 
   let used: number | null = null;
   if (!pro) {
     try { used = await reserve(uid, "roast"); }
-    catch (e) { return NextResponse.json({ error: "Something went wrong." }, { status: 500 }); }
+    catch { return NextResponse.json({ error: "Something went wrong." }, { status: 500 }); }
     if (used === null) return NextResponse.json({ error: "🔒 Free roast used. Go Pro to keep getting yelled at.", code: "LIMIT" }, { status: 402 });
   }
 
-  const out = await run(summary, apiKey);
+  const out = await runRoastWithCascade(summary, apiKey);
   if ("error" in out) {
     if (used !== null) await refund(uid, "roast");
     return NextResponse.json({ error: out.error }, { status: out.status });
