@@ -54,7 +54,10 @@ async function run(text: string, today: string, apiKey: string): Promise<Out> {
         }),
       }
     );
-    if (!res.ok) return { error: "The AI service is busy. Try again in a moment.", status: 502 };
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "Unknown error");
+      return { error: `Google API Error ${res.status}: ${errText.substring(0, 120)}`, status: 502 };
+    }
     const data = await res.json();
     const o = JSON.parse(data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "{}");
 
