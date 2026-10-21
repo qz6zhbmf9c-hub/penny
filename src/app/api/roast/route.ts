@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { allow } from "@/lib/otp";
 import { refund, reserve, roastLeft } from "@/lib/quota";
 
-const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const MODEL = "gemini-1.5-flash";
 const CATS = ["Housing", "Food", "Transport", "Fun", "Health", "Shopping", "Bills"];
 
 const SYSTEM = `You are Penny's resident roast comic: a brutally honest, witty, savage financial advisor.
