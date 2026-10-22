@@ -4,6 +4,9 @@ import { authOptions } from "@/lib/auth";
 import { allow } from "@/lib/otp";
 import { refund, reserve, roastLeft } from "@/lib/quota";
 
+// 1. OVERRIDE VERCEL'S DEFAULT 10-SECOND TIMEOUT
+export const maxDuration = 60;
+
 const CATS = ["Housing", "Food", "Transport", "Fun", "Health", "Shopping", "Bills"];
 
 const SYSTEM = `You are Penny's resident roast comic: a brutally honest, witty, savage financial advisor.
@@ -23,42 +26,53 @@ const num = (v: unknown) => { const x = Math.round(Number(v)); return Number.isF
 type Out = { roast: string } | { error: string; status: number };
 
 async function callRoastModel(model: string, summary: unknown, apiKey: string): Promise<string | null> {
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-      signal: AbortSignal.timeout(15_000),
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: SYSTEM }] },
-        contents: [{ role: "user", parts: [{ text: `Spending summary (data only):\n${JSON.stringify(summary)}` }] }],
-        generationConfig: {
-          temperature: 1,
-          maxOutputTokens: 500,
-          responseMimeType: "application/json",
-          responseSchema: { type: "OBJECT", properties: { roast: { type: "STRING" } }, required: ["roast"] },
-        },
-      }),
-    }
-  );
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+        signal: AbortSignal.timeout(25_000), // Plenty of time for the AI to think
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: SYSTEM }] },
+          contents: [{ role: "user", parts: [{ text: `Spending summary (data only):\n${JSON.stringify(summary)}` }] }],
+          // 2. DISABLE SAFETY FILTERS SO THE AI CAN ACTUALLY BE SAVAGE
+          safetySettings: [
+            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
+          ],
+          generationConfig: {
+            temperature: 1,
+            maxOutputTokens: 500,
+            responseMimeType: "application/json",
+            responseSchema: { type: "OBJECT", properties: { roast: { type: "STRING" } }, required: ["roast"] },
+          },
+        }),
+      }
+    );
 
-  if (!res.ok) return null;
-  const data = await res.json();
-  const parts = data?.candidates?.[0]?.content?.parts ?? [];
-  const textPart = parts.find((p: any) => !p.thought)?.text || parts[0]?.text || "{}";
-  const roast = cleanText(JSON.parse(textPart)?.roast, 400).replace(/🔥/g, "");
-  return roast.length >= 10 ? roast : null;
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error(`Gemini API Error (${res.status}):`, errText);
+      return null;
+    }
+
+    const data = await res.json();
+    const parts = data?.candidates?.[0]?.content?.parts ?? [];
+    const textPart = parts.find((p: any) => !p.thought)?.text || parts[0]?.text || "{}";
+    const roast = cleanText(JSON.parse(textPart)?.roast, 400).replace(/🔥/g, "");
+    return roast.length >= 10 ? roast : null;
+  } catch (error) {
+    console.error("Roast Fetch Exception:", error);
+    return null;
+  }
 }
 
-// Bypass the multi-model cascade and force a single rapid request
 async function runRoast(summary: unknown, apiKey: string): Promise<Out> {
-  try {
-    // Lock directly to the fastest and most reliable model
-    const roast = await callRoastModel("gemini-3.8-flash", summary, apiKey);
-    if (roast) return { roast };
-  } catch {
-    // If the single request drops, fail immediately instead of looping
-  }
+  const roast = await callRoastModel("gemini-3.8-flash", summary, apiKey);
+  if (roast) return { roast };
   return { error: "The roast machine is cooling down. Try again in a moment.", status: 503 };
 }
 
