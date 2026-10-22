@@ -4,12 +4,6 @@ import { authOptions } from "@/lib/auth";
 import { allow } from "@/lib/otp";
 import { refund, reserve, roastLeft } from "@/lib/quota";
 
-const CANDIDATE_MODELS = [
-  "gemini-3.5-flash",
-  "gemini-3.1-flash-lite",
-  "gemini-flash-latest",
-  "gemini-3.8-flash",
-];
 const CATS = ["Housing", "Food", "Transport", "Fun", "Health", "Shopping", "Bills"];
 
 const SYSTEM = `You are Penny's resident roast comic: a brutally honest, witty, savage financial advisor.
@@ -56,14 +50,14 @@ async function callRoastModel(model: string, summary: unknown, apiKey: string): 
   return roast.length >= 10 ? roast : null;
 }
 
-async function runRoastWithCascade(summary: unknown, apiKey: string): Promise<Out> {
-  for (const model of CANDIDATE_MODELS) {
-    try {
-      const roast = await callRoastModel(model, summary, apiKey);
-      if (roast) return { roast };
-    } catch {
-      continue;
-    }
+// Bypass the multi-model cascade and force a single rapid request
+async function runRoast(summary: unknown, apiKey: string): Promise<Out> {
+  try {
+    // Lock directly to the fastest and most reliable model to prevent the 12-second timeout
+    const roast = await callRoastModel("gemini-3.8-flash", summary, apiKey);
+    if (roast) return { roast };
+  } catch {
+    // If the single request drops, fail immediately instead of looping
   }
   return { error: "The roast machine is cooling down. Try again in a moment.", status: 503 };
 }
@@ -96,7 +90,7 @@ export async function POST(req: Request) {
     if (used === null) return NextResponse.json({ error: "🔒 Free roast used. Go Pro to keep getting yelled at.", code: "LIMIT" }, { status: 402 });
   }
 
-  const out = await runRoastWithCascade(summary, apiKey);
+  const out = await runRoast(summary, apiKey);
   if ("error" in out) {
     if (used !== null) await refund(uid, "roast");
     return NextResponse.json({ error: out.error }, { status: out.status });
