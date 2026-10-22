@@ -74,7 +74,7 @@ async function callRoastModel(model: string, summary: unknown, apiKey: string): 
 }
 
 async function runRoast(summary: unknown, apiKey: string): Promise<Out> {
-  const roast = await callRoastModel("gemini-3.8-flash", summary, apiKey);
+  const roast = await callRoastModel("gemini-1.5-flash", summary, apiKey);
   if (roast) return { roast };
   return { error: "The roast machine is cooling down. Try again in a moment.", status: 503 };
 }
