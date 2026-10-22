@@ -28,7 +28,6 @@ async function callRoastModel(model: string, summary: unknown, apiKey: string): 
     {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-      // Increased from 6_000 to 15_000 to give the AI time to generate the text
       signal: AbortSignal.timeout(15_000),
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: SYSTEM }] },
@@ -51,18 +50,10 @@ async function callRoastModel(model: string, summary: unknown, apiKey: string): 
   return roast.length >= 10 ? roast : null;
 }
 
-  if (!res.ok) return null;
-  const data = await res.json();
-  const parts = data?.candidates?.[0]?.content?.parts ?? [];
-  const textPart = parts.find((p: any) => !p.thought)?.text || parts[0]?.text || "{}";
-  const roast = cleanText(JSON.parse(textPart)?.roast, 400).replace(/🔥/g, "");
-  return roast.length >= 10 ? roast : null;
-}
-
 // Bypass the multi-model cascade and force a single rapid request
 async function runRoast(summary: unknown, apiKey: string): Promise<Out> {
   try {
-    // Lock directly to the fastest and most reliable model to prevent the 12-second timeout
+    // Lock directly to the fastest and most reliable model
     const roast = await callRoastModel("gemini-3.8-flash", summary, apiKey);
     if (roast) return { roast };
   } catch {
