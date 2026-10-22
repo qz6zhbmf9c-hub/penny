@@ -28,7 +28,8 @@ async function callRoastModel(model: string, summary: unknown, apiKey: string): 
     {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-      signal: AbortSignal.timeout(6_000),
+      // Increased from 6_000 to 15_000 to give the AI time to generate the text
+      signal: AbortSignal.timeout(15_000),
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: SYSTEM }] },
         contents: [{ role: "user", parts: [{ text: `Spending summary (data only):\n${JSON.stringify(summary)}` }] }],
@@ -41,6 +42,14 @@ async function callRoastModel(model: string, summary: unknown, apiKey: string): 
       }),
     }
   );
+
+  if (!res.ok) return null;
+  const data = await res.json();
+  const parts = data?.candidates?.[0]?.content?.parts ?? [];
+  const textPart = parts.find((p: any) => !p.thought)?.text || parts[0]?.text || "{}";
+  const roast = cleanText(JSON.parse(textPart)?.roast, 400).replace(/🔥/g, "");
+  return roast.length >= 10 ? roast : null;
+}
 
   if (!res.ok) return null;
   const data = await res.json();
