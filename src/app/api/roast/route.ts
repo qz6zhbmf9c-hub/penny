@@ -4,7 +4,6 @@ import { authOptions } from "@/lib/auth";
 import { allow } from "@/lib/otp";
 import { refund, reserve, roastLeft } from "@/lib/quota";
 
-// 1. OVERRIDE VERCEL'S DEFAULT 10-SECOND TIMEOUT
 export const maxDuration = 60;
 
 const CATS = ["Housing", "Food", "Transport", "Fun", "Health", "Shopping", "Bills"];
@@ -32,11 +31,10 @@ async function callRoastModel(model: string, summary: unknown, apiKey: string): 
       {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-        signal: AbortSignal.timeout(25_000), // Plenty of time for the AI to think
+        signal: AbortSignal.timeout(25_000), 
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: SYSTEM }] },
           contents: [{ role: "user", parts: [{ text: `Spending summary (data only):\n${JSON.stringify(summary)}` }] }],
-          // DISABLE SAFETY FILTERS SO THE AI CAN ACTUALLY BE SAVAGE
           safetySettings: [
             { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
             { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
@@ -46,7 +44,6 @@ async function callRoastModel(model: string, summary: unknown, apiKey: string): 
           generationConfig: {
             temperature: 0.9,
             maxOutputTokens: 500,
-            // REMOVED the strict JSON formatting requirement here. The AI will output plain text.
           },
         }),
       }
@@ -62,9 +59,8 @@ async function callRoastModel(model: string, summary: unknown, apiKey: string): 
     const parts = data?.candidates?.[0]?.content?.parts ?? [];
     const textPart = parts.find((p: any) => !p.thought)?.text || parts[0]?.text || "";
     
-    // 2. PARSE AS RAW TEXT, BYPASSING JSON.PARSE ENTIRELY
     let roast = cleanText(textPart, 400).replace(/🔥/g, "");
-    roast = roast.replace(/^["']|["']$/g, ""); // Strip any accidental wrapping quotes the AI might add
+    roast = roast.replace(/^["']|["']$/g, ""); 
     
     return roast.length >= 10 ? roast : null;
   } catch (error) {
@@ -74,7 +70,8 @@ async function callRoastModel(model: string, summary: unknown, apiKey: string): 
 }
 
 async function runRoast(summary: unknown, apiKey: string): Promise<Out> {
-  const roast = await callRoastModel("gemini-1.5-flash", summary, apiKey);
+  // Bypassing cascade entirely and locking to the working 1.5 Flash alias
+  const roast = await callRoastModel("gemini-1.5-flash-latest", summary, apiKey);
   if (roast) return { roast };
   return { error: "The roast machine is cooling down. Try again in a moment.", status: 503 };
 }

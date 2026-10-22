@@ -4,13 +4,9 @@ import { authOptions } from "@/lib/auth";
 import { allow } from "@/lib/otp";
 import { aiLeft, refund, reserve } from "@/lib/quota";
 
+export const maxDuration = 60;
+
 const CATS = ["Housing", "Food", "Transport", "Fun", "Health", "Shopping", "Bills", "Income"] as const;
-const CANDIDATE_MODELS = [
-  "gemini-3.5-flash",
-  "gemini-3.1-flash-lite",
-  "gemini-flash-latest",
-  "gemini-3.8-flash",
-];
 const YMD = /^\d{4}-\d{2}-\d{2}$/;
 
 const SYSTEM = `You convert one spoken sentence about money into a single transaction.
@@ -31,62 +27,61 @@ type Parsed = { t: "in" | "out"; a: number; c: string; n: string; d: string };
 type Out = { data: Parsed } | { error: string; status: number };
 
 async function callGoogleModel(model: string, text: string, today: string, apiKey: string): Promise<Parsed | null> {
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-      signal: AbortSignal.timeout(5_000), // 5-second fast failover
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: SYSTEM }] },
-        contents: [{ role: "user", parts: [{ text: `Today is ${today}.\nSpeech: """${text}"""` }] }],
-        generationConfig: {
-          temperature: 0,
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: "OBJECT",
-            properties: {
-              t: { type: "STRING", enum: ["in", "out"] },
-              a: { type: "NUMBER" },
-              c: { type: "STRING", enum: [...CATS] },
-              n: { type: "STRING" },
-              d: { type: "STRING" },
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+        signal: AbortSignal.timeout(10_000), 
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: SYSTEM }] },
+          contents: [{ role: "user", parts: [{ text: `Today is ${today}.\nSpeech: """${text}"""` }] }],
+          generationConfig: {
+            temperature: 0,
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: "OBJECT",
+              properties: {
+                t: { type: "STRING", enum: ["in", "out"] },
+                a: { type: "NUMBER" },
+                c: { type: "STRING", enum: [...CATS] },
+                n: { type: "STRING" },
+                d: { type: "STRING" },
+              },
+              required: ["t", "a", "c", "n", "d"],
             },
-            required: ["t", "a", "c", "n", "d"],
           },
-        },
-      }),
-    }
-  );
+        }),
+      }
+    );
 
-  if (!res.ok) return null;
-  const data = await res.json();
-  const parts = data?.candidates?.[0]?.content?.parts ?? [];
-  const textPart = parts.find((p: any) => !p.thought)?.text || parts[0]?.text || "{}";
-  const o = JSON.parse(textPart);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const parts = data?.candidates?.[0]?.content?.parts ?? [];
+    const textPart = parts.find((p: any) => !p.thought)?.text || parts[0]?.text || "{}";
+    const o = JSON.parse(textPart);
 
-  const t: "in" | "out" = o.t === "in" ? "in" : "out";
-  const a = Math.round(Number(o.a) * 100) / 100;
-  if (!Number.isFinite(a) || a <= 0 || a > 1_000_000_000) return null;
+    const t: "in" | "out" = o.t === "in" ? "in" : "out";
+    const a = Math.round(Number(o.a) * 100) / 100;
+    if (!Number.isFinite(a) || a <= 0 || a > 1_000_000_000) return null;
 
-  let c = (CATS as readonly string[]).includes(o.c) ? (o.c as string) : t === "in" ? "Income" : "Shopping";
-  if (t === "in") c = "Income";
-  else if (c === "Income") c = "Shopping";
-  const d = YMD.test(String(o.d)) && !isNaN(Date.parse(o.d)) ? String(o.d) : today;
+    let c = (CATS as readonly string[]).includes(o.c) ? (o.c as string) : t === "in" ? "Income" : "Shopping";
+    if (t === "in") c = "Income";
+    else if (c === "Income") c = "Shopping";
+    const d = YMD.test(String(o.d)) && !isNaN(Date.parse(o.d)) ? String(o.d) : today;
 
-  return { t, a, c, n: String(o.n ?? "").trim().slice(0, 80), d };
+    return { t, a, c, n: String(o.n ?? "").trim().slice(0, 80), d };
+  } catch (error) {
+    console.error("Parse Error:", error);
+    return null;
+  }
 }
 
-async function runWithCascade(text: string, today: string, apiKey: string): Promise<Out> {
-  for (const model of CANDIDATE_MODELS) {
-    try {
-      const parsed = await callGoogleModel(model, text, today, apiKey);
-      if (parsed) return { data: parsed };
-    } catch {
-      // Fast failover to next model in cascade
-      continue;
-    }
-  }
+async function runParse(text: string, today: string, apiKey: string): Promise<Out> {
+  // Bypassing cascade entirely and locking to the working 1.5 Flash alias
+  const parsed = await callGoogleModel("gemini-1.5-flash-latest", text, today, apiKey);
+  if (parsed) return { data: parsed };
   return { error: "Voice processing is temporarily busy. Please try again.", status: 503 };
 }
 
@@ -115,7 +110,7 @@ export async function POST(req: Request) {
     }
   }
 
-  const out = await runWithCascade(text, today, apiKey);
+  const out = await runParse(text, today, apiKey);
   if ("error" in out) {
     if (used !== null) await refund(uid, "ai");
     return NextResponse.json({ error: out.error }, { status: out.status });
