@@ -54,6 +54,32 @@ export default function LiveSandbox() {
   
   // The gate that prevents Next.js from crashing during prerender
   const [mounted, setMounted] = useState(false);
+// Listens to scroll and dynamically updates CSS variables for the nav animations
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      
+      // Finishes eating by 650px of scrolling (guaranteed to hit 100% on all screen sizes)
+      const clip = Math.max(0, Math.min(100, ((scrollY - 50) / 800) * 100));
+      document.documentElement.style.setProperty("--nav-clip", `${clip}%`);
+      
+      // The star turns on right as the darkness finishes eating the toolbar
+      const spark = clip > 85 ? 1 : 0;
+      document.documentElement.style.setProperty("--spark-opacity", `${spark}`);
+
+      // The exact moment the toolbar is 100% eaten, trigger the 2-second fade
+      const logoOp = clip === 100 ? 0 : 1;
+      document.documentElement.style.setProperty("--logo-opacity", `${logoOp}`);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll(); 
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      document.documentElement.style.setProperty("--nav-clip", "0%");
+      document.documentElement.style.setProperty("--spark-opacity", "0");
+      document.documentElement.style.setProperty("--logo-opacity", "1");
+    };
+  }, []);
   const [glassPhase, setGlassPhase] = useState<"waiting" | "visible" | "fading" | "gone">("waiting");
 
   const [view, setView] = useState<View>("ov");

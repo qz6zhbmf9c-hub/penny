@@ -337,22 +337,30 @@ export default function Home() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString }} />
 
       <header className="nav">
-        <div className="pill">
-          <Link href="/" className="brand" aria-label="Penny home">
+        <div style={{ maxWidth: 980, margin: "0 auto", position: "relative" }}>
+          {/* Unclipped logo that floats above the eaten toolbar */}
+          <Link href="/" className="brand float-brand" aria-label="Penny home">
             Penny<i>.</i>
+            <span className="sparkle" aria-hidden="true">✦</span>
           </Link>
-          <span className="status">
-            <span className="live" aria-hidden="true" />
-            Live · Gemini AI
-          </span>
-          <nav aria-label="Primary">
-            <a href="#features">Features</a>
-            <a href="#pricing">Pricing</a>
-            <a href="#faq">FAQ</a>
-          </nav>
-          <Link href="/dashboard" className="btn cta sm">
-            Open app
-          </Link>
+
+          <div className="pill">
+            {/* Hidden placeholder to keep the flexbox layout perfect */}
+            <div className="brand" style={{ opacity: 0, pointerEvents: "none", userSelect: "none" }}>Penny<i>.</i></div>
+            
+            <span className="status">
+              <span className="live" aria-hidden="true" />
+              Live · Gemini AI
+            </span>
+            <nav aria-label="Primary">
+              <a href="#features">Features</a>
+              <a href="#pricing">Pricing</a>
+              <a href="#faq">FAQ</a>
+            </nav>
+            <Link href="/dashboard" className="btn cta sm">
+              Open app
+            </Link>
+          </div>
         </div>
       </header>
 
