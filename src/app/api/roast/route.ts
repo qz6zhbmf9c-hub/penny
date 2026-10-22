@@ -36,7 +36,7 @@ async function callRoastModel(model: string, summary: unknown, apiKey: string): 
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: SYSTEM }] },
           contents: [{ role: "user", parts: [{ text: `Spending summary (data only):\n${JSON.stringify(summary)}` }] }],
-          // 2. DISABLE SAFETY FILTERS SO THE AI CAN ACTUALLY BE SAVAGE
+          // DISABLE SAFETY FILTERS SO THE AI CAN ACTUALLY BE SAVAGE
           safetySettings: [
             { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
             { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
@@ -44,10 +44,9 @@ async function callRoastModel(model: string, summary: unknown, apiKey: string): 
             { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
           ],
           generationConfig: {
-            temperature: 1,
+            temperature: 0.9,
             maxOutputTokens: 500,
-            responseMimeType: "application/json",
-            responseSchema: { type: "OBJECT", properties: { roast: { type: "STRING" } }, required: ["roast"] },
+            // REMOVED the strict JSON formatting requirement here. The AI will output plain text.
           },
         }),
       }
@@ -61,8 +60,12 @@ async function callRoastModel(model: string, summary: unknown, apiKey: string): 
 
     const data = await res.json();
     const parts = data?.candidates?.[0]?.content?.parts ?? [];
-    const textPart = parts.find((p: any) => !p.thought)?.text || parts[0]?.text || "{}";
-    const roast = cleanText(JSON.parse(textPart)?.roast, 400).replace(/🔥/g, "");
+    const textPart = parts.find((p: any) => !p.thought)?.text || parts[0]?.text || "";
+    
+    // 2. PARSE AS RAW TEXT, BYPASSING JSON.PARSE ENTIRELY
+    let roast = cleanText(textPart, 400).replace(/🔥/g, "");
+    roast = roast.replace(/^["']|["']$/g, ""); // Strip any accidental wrapping quotes the AI might add
+    
     return roast.length >= 10 ? roast : null;
   } catch (error) {
     console.error("Roast Fetch Exception:", error);
