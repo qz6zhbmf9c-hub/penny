@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import LiveSandbox from "@/components/LiveSandbox";
 import "./globals.css";
 import "./landing.css";
 
@@ -393,70 +394,7 @@ export default function Home() {
             </ul>
           </div>
 
-          <div className="wrap stage" aria-hidden="true">
-            <div className="deck">
-              <div className="gl stage-voice">
-                <div className="cap">
-                  <span className="live" />
-                  Gemini AI Voice Logging
-                </div>
-                <div className="eq">
-                  {Array.from({ length: 12 }, (_, i) => (
-                    <i key={i} />
-                  ))}
-                </div>
-                <p className="say">“I spent 40 bucks on gas yesterday”</p>
-                <div className="chips">
-                  <b className="mono neg">-$40.00</b>
-                  <b>⛽ Transport</b>
-                  <b>Yesterday</b>
-                  <b className="ok">✓ Ready to save</b>
-                </div>
-              </div>
-
-              <div className="gl stage-scan">
-                <div className="cap">
-                  <span className="live" />
-                  AI Receipt Vision
-                </div>
-                <div className="paper">
-                  <span className="laser" />
-                  <div className="paper-head">
-                    <p className="hl">Trader Joe&apos;s</p>
-                    <p className="mono dim">Oct 14</p>
-                  </div>
-                  <i />
-                  <i />
-                  <i />
-                  <p className="tot mono">Total: $64.80</p>
-                </div>
-              </div>
-
-              <div className="gl stage-roast">
-                <div className="cap rose">🔥 AI Spending Roast</div>
-                <p>
-                  “You spent <b className="mono">$184</b> on delivery apps this month. Your DoorDash driver is practically a legal dependent.”
-                </p>
-              </div>
-
-              <div className="gl stage-streak">
-                <div className="cap amber">
-                  🔥 <span className="mono">24</span> Day Streak
-                  <em className="rest">Monthly Restore Ready</em>
-                </div>
-                <div className="bar">
-                  <span>Groceries</span>
-                  <b className="mono">68%</b>
-                  <u style={{ width: "68%" }} />
-                </div>
-                <div className="bar hot">
-                  <span>Dining Out ⚠️</span>
-                  <b className="mono">92%</b>
-                  <u style={{ width: "92%" }} />
-                </div>
-              </div>
-            </div>
-          </div>
+          <LiveSandbox />
         </section>
 
         <div className="marquee" aria-hidden="true">
