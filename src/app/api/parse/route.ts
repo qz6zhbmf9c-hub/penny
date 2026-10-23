@@ -34,7 +34,7 @@ async function runParseGroq(text: string, today: string, apiKey: string): Promis
       },
       signal: AbortSignal.timeout(10_000),
       body: JSON.stringify({
-        model: "openai/gpt-oss-20b",
+        model: "qwen/qwen3.8-27b",
         messages: [
           { role: "system", content: SYSTEM },
           { role: "user", content: `Today is ${today}. Speech: "${text}"` }
@@ -51,13 +51,21 @@ async function runParseGroq(text: string, today: string, apiKey: string): Promis
     }
     
     const data = await res.json();
-    const textPart = data.choices?.[0]?.message?.content || "{}";
+    const textPart = data.choices?.[0]?.message?.content || "";
+    
+    if (!textPart) {
+      console.error("Groq Parse returned empty content:", JSON.stringify(data));
+      return { error: "Couldn't understand that. Try again.", status: 422 };
+    }
     
     const cleanJson = textPart.replace(/```json/gi, '').replace(/```/g, '').trim();
     const o = JSON.parse(cleanJson);
 
     const a = Math.round(Number(o.a) * 100) / 100;
-    if (!Number.isFinite(a) || a <= 0 || a > 1_000_000_000) return { error: "Couldn't hear an amount.", status: 422 };
+    if (!Number.isFinite(a) || a <= 0 || a > 1_000_000_000) {
+      console.error("Groq Parse Invalid Amount:", o);
+      return { error: "Couldn't hear an amount.", status: 422 };
+    }
 
     const c = (CATS as readonly string[]).includes(o.c) ? (o.c as string) : (o.t === "in" ? "Income" : "Shopping");
     let d = YMD.test(String(o.d)) && !isNaN(Date.parse(o.d)) ? String(o.d) : today;

@@ -31,13 +31,13 @@ async function runRoastGroq(summary: unknown, apiKey: string): Promise<Out> {
       },
       signal: AbortSignal.timeout(15_000), 
       body: JSON.stringify({
-        model: "openai/gpt-oss-120b",
+        model: "qwen/qwen3.8-27b",
         messages: [
           { role: "system", content: SYSTEM },
           { role: "user", content: `Spending summary (data only):\n${JSON.stringify(summary)}` }
         ],
         temperature: 0.85,
-        max_tokens: 300,
+        max_completion_tokens: 300,
       }),
     });
 
@@ -50,10 +50,19 @@ async function runRoastGroq(summary: unknown, apiKey: string): Promise<Out> {
     const data = await res.json();
     const textPart = data.choices?.[0]?.message?.content || "";
     
+    if (!textPart) {
+      console.error("Groq Roast empty content:", JSON.stringify(data));
+      return { error: "Couldn't come up with a roast.", status: 422 };
+    }
+
     let roast = cleanText(textPart, 400).replace(/🔥/g, "");
     roast = roast.replace(/^["']|["']$/g, ""); 
     
-    if (roast.length < 10) return { error: "Couldn't come up with a roast.", status: 422 };
+    if (roast.length < 10) {
+      console.error("Groq Roast too short:", textPart);
+      return { error: "Couldn't come up with a roast.", status: 422 };
+    }
+    
     return { roast };
   } catch (error) {
     console.error("Groq Roast Exception:", error);
