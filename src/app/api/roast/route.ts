@@ -4,12 +4,6 @@ import { authOptions } from "@/lib/auth";
 import { allow } from "@/lib/otp";
 import { refund, reserve, roastLeft } from "@/lib/quota";
 
-const CANDIDATE_MODELS = [
-  "gemini-1.5-flash",
-  "gemini-1.5-flash-latest",
-  "gemini-1.5-flash-8b"
-];
-
 const CATS = ["Housing", "Food", "Transport", "Fun", "Health", "Shopping", "Bills"];
 
 const SYSTEM = `You are Penny's resident roast comic: a brutally honest, witty, savage financial advisor.
@@ -27,52 +21,39 @@ const num = (v: unknown) => { const x = Math.round(Number(v)); return Number.isF
 
 type Out = { roast: string } | { error: string; status: number };
 
-async function callRoastModel(model: string, summary: unknown, apiKey: string): Promise<string | null> {
+async function runRoastGroq(summary: unknown, apiKey: string): Promise<Out> {
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-        signal: AbortSignal.timeout(15_000), 
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: SYSTEM }] },
-          contents: [{ role: "user", parts: [{ text: `Spending summary (data only):\n${JSON.stringify(summary)}` }] }],
-          safetySettings: [
-            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
-            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
-            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
-            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" },
-          ],
-          generationConfig: {
-            temperature: 0.9,
-            maxOutputTokens: 500,
-          },
-        }),
-      }
-    );
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      signal: AbortSignal.timeout(15_000), 
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile",
+        messages: [
+          { role: "system", content: SYSTEM },
+          { role: "user", content: `Spending summary (data only):\n${JSON.stringify(summary)}` }
+        ],
+        temperature: 0.85,
+        max_tokens: 300,
+      }),
+    });
 
-    if (!res.ok) return null;
+    if (!res.ok) return { error: "The roast machine is cooling down. Try again in a moment.", status: 503 };
 
     const data = await res.json();
-    const parts = data?.candidates?.[0]?.content?.parts ?? [];
-    const textPart = parts.find((p: any) => !p.thought)?.text || parts[0]?.text || "";
+    const textPart = data.choices?.[0]?.message?.content || "";
     
     let roast = cleanText(textPart, 400).replace(/🔥/g, "");
     roast = roast.replace(/^["']|["']$/g, ""); 
     
-    return roast.length >= 10 ? roast : null;
+    if (roast.length < 10) return { error: "Couldn't come up with a roast.", status: 422 };
+    return { roast };
   } catch (error) {
-    return null;
+    return { error: "Couldn't reach the roast machine. Try again.", status: 500 };
   }
-}
-
-async function runRoast(summary: unknown, apiKey: string): Promise<Out> {
-  for (const model of CANDIDATE_MODELS) {
-    const roast = await callRoastModel(model, summary, apiKey);
-    if (roast) return { roast };
-  }
-  return { error: "The roast machine is cooling down. Try again in a moment.", status: 503 };
 }
 
 export async function POST(req: Request) {
@@ -82,7 +63,7 @@ export async function POST(req: Request) {
   const pro = session.user.isPro;
 
   if (!allow(`roast:${uid}`, 5, 60_000)) return NextResponse.json({ error: "Easy, you're getting roasted too fast. Wait a moment." }, { status: 429 });
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) return NextResponse.json({ error: "Roasts aren't configured." }, { status: 500 });
 
   const body = await req.json().catch(() => null);
@@ -103,7 +84,7 @@ export async function POST(req: Request) {
     if (used === null) return NextResponse.json({ error: "🔒 Free roast used. Go Pro to keep getting yelled at.", code: "LIMIT" }, { status: 402 });
   }
 
-  const out = await runRoast(summary, apiKey);
+  const out = await runRoastGroq(summary, apiKey);
   if ("error" in out) {
     if (used !== null) await refund(uid, "roast");
     return NextResponse.json({ error: out.error }, { status: out.status });

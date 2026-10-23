@@ -5,11 +5,6 @@ import { allow } from "@/lib/otp";
 import { aiLeft, refund, reserve } from "@/lib/quota";
 
 const CATS = ["Housing", "Food", "Transport", "Fun", "Health", "Shopping", "Bills"] as const;
-const CANDIDATE_MODELS = [
-  "gemini-1.5-flash",
-  "gemini-1.5-flash-latest",
-  "gemini-1.5-flash-8b"
-];
 const YMD = /^\d{4}-\d{2}-\d{2}$/;
 const MIMES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_B64 = 3_000_000;
@@ -32,70 +27,56 @@ If the image is not a receipt, return a = 0.`;
 type Parsed = { t: "out"; a: number; c: string; n: string; d: string };
 type Out = { data: Parsed } | { error: string; status: number };
 
-async function callReceiptModel(model: string, image: string, mime: string, today: string, apiKey: string): Promise<Parsed | null> {
+async function runReceiptGroq(image: string, mime: string, today: string, apiKey: string): Promise<Out> {
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-        signal: AbortSignal.timeout(15_000),
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: SYSTEM }] },
-          contents: [{
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      signal: AbortSignal.timeout(15_000),
+      body: JSON.stringify({
+        model: "llama-3.2-11b-vision-preview",
+        messages: [
+          { role: "system", content: SYSTEM },
+          {
             role: "user",
-            parts: [
-              { text: `Today is ${today}. Extract the expense from this receipt.` },
-              { inlineData: { mimeType: mime, data: image } },
-            ],
-          }],
-          generationConfig: {
-            temperature: 0,
-            responseMimeType: "application/json",
-            responseSchema: {
-              type: "OBJECT",
-              properties: {
-                t: { type: "STRING", enum: ["out"] },
-                a: { type: "NUMBER" },
-                c: { type: "STRING", enum: [...CATS] },
-                n: { type: "STRING" },
-                d: { type: "STRING" },
-              },
-              required: ["t", "a", "c", "n", "d"],
-            },
-          },
-        }),
-      }
-    );
+            content: [
+              { type: "text", text: `Today is ${today}. Extract the expense from this receipt.` },
+              { type: "image_url", image_url: { url: `data:${mime};base64,${image}` } }
+            ]
+          }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0,
+      }),
+    });
 
-    if (!res.ok) return null;
-    const data = await res.json();
-    const parts = data?.candidates?.[0]?.content?.parts ?? [];
-    const textPart = parts.find((p: any) => !p.thought)?.text || parts[0]?.text || "{}";
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error("Groq Vision API Error:", errText);
+      return { error: "Could not read that receipt. Try a clearer photo.", status: 422 };
+    }
     
-    // Strip markdown backticks (case-insensitive) if Gemini hallucinates them
+    const data = await res.json();
+    const textPart = data.choices?.[0]?.message?.content || "{}";
+    
     const cleanJson = textPart.replace(/```json/gi, '').replace(/```/g, '').trim();
     const o = JSON.parse(cleanJson);
 
     const a = Math.round(Number(o.a) * 100) / 100;
-    if (!Number.isFinite(a) || a <= 0 || a > 1_000_000_000) return null;
+    if (!Number.isFinite(a) || a <= 0 || a > 1_000_000_000) return { error: "Couldn't find a total on that receipt.", status: 422 };
 
     const c = (CATS as readonly string[]).includes(o.c) ? (o.c as string) : "Shopping";
     let d = YMD.test(String(o.d)) && !isNaN(Date.parse(o.d)) ? String(o.d) : today;
     if (d > today) d = today;
 
-    return { t: "out", a, c, n: String(o.n ?? "").trim().slice(0, 40), d };
+    return { data: { t: "out", a, c, n: String(o.n ?? "").trim().slice(0, 40), d } };
   } catch (e) {
-    return null;
+    console.error("Groq Vision Exception:", e);
+    return { error: "Could not read that receipt. Try again.", status: 500 };
   }
-}
-
-async function runReceiptWithCascade(image: string, mime: string, today: string, apiKey: string): Promise<Out> {
-  for (const model of CANDIDATE_MODELS) {
-    const parsed = await callReceiptModel(model, image, mime, today, apiKey);
-    if (parsed) return { data: parsed };
-  }
-  return { error: "Could not read that receipt. Try a clearer photo.", status: 422 };
 }
 
 export async function POST(req: Request) {
@@ -105,15 +86,17 @@ export async function POST(req: Request) {
   const pro = session.user.isPro;
 
   if (!allow(`receipt:${uid}`, 10, 60_000)) return NextResponse.json({ error: "Too many scans. Wait a moment." }, { status: 429 });
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) return NextResponse.json({ error: "Receipt scanning isn't configured." }, { status: 500 });
 
   const body = await req.json().catch(() => null);
   const image = String(body?.image ?? "");
   const mime = String(body?.mime ?? "image/jpeg");
+  
   if (!image || !/^[A-Za-z0-9+/=]+$/.test(image)) return NextResponse.json({ error: "No image received." }, { status: 400 });
   if (image.length > MAX_B64) return NextResponse.json({ error: "That image is too large." }, { status: 413 });
   if (!MIMES.includes(mime)) return NextResponse.json({ error: "Please use a JPG, PNG or WebP image." }, { status: 415 });
+  
   const clientDay = String(body?.today ?? "");
   const today = YMD.test(clientDay) && !isNaN(Date.parse(clientDay)) ? clientDay : new Date().toISOString().slice(0, 10);
 
@@ -124,10 +107,11 @@ export async function POST(req: Request) {
     if (used === null) return NextResponse.json({ error: "🤖 Compute isn't free. You've hit your limit! Unlock Lifetime Pro for $19.", code: "LIMIT" }, { status: 402 });
   }
 
-  const out = await runReceiptWithCascade(image, mime, today, apiKey);
+  const out = await runReceiptGroq(image, mime, today, apiKey);
   if ("error" in out) {
     if (used !== null) await refund(uid, "ai");
     return NextResponse.json({ error: out.error }, { status: out.status });
   }
+  
   return NextResponse.json({ ...out.data, ...(used !== null ? { aiLeft: aiLeft(used) } : {}) });
 }
