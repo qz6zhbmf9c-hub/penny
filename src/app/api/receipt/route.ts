@@ -6,10 +6,9 @@ import { aiLeft, refund, reserve } from "@/lib/quota";
 
 const CATS = ["Housing", "Food", "Transport", "Fun", "Health", "Shopping", "Bills"] as const;
 const CANDIDATE_MODELS = [
-  "gemini-3.5-flash",
-  "gemini-3.1-flash-lite",
-  "gemini-flash-latest",
-  "gemini-3.8-flash",
+  "gemini-1.5-flash",
+  "gemini-1.5-flash-latest",
+  "gemini-1.5-flash-8b"
 ];
 const YMD = /^\d{4}-\d{2}-\d{2}$/;
 const MIMES = ["image/jpeg", "image/png", "image/webp"];
@@ -34,64 +33,67 @@ type Parsed = { t: "out"; a: number; c: string; n: string; d: string };
 type Out = { data: Parsed } | { error: string; status: number };
 
 async function callReceiptModel(model: string, image: string, mime: string, today: string, apiKey: string): Promise<Parsed | null> {
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-      signal: AbortSignal.timeout(8_000), // 8-second timeout for image processing
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: SYSTEM }] },
-        contents: [{
-          role: "user",
-          parts: [
-            { text: `Today is ${today}. Extract the expense from this receipt.` },
-            { inlineData: { mimeType: mime, data: image } },
-          ],
-        }],
-        generationConfig: {
-          temperature: 0,
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: "OBJECT",
-            properties: {
-              t: { type: "STRING", enum: ["out"] },
-              a: { type: "NUMBER" },
-              c: { type: "STRING", enum: [...CATS] },
-              n: { type: "STRING" },
-              d: { type: "STRING" },
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+        signal: AbortSignal.timeout(12_000),
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: SYSTEM }] },
+          contents: [{
+            role: "user",
+            parts: [
+              { text: `Today is ${today}. Extract the expense from this receipt.` },
+              { inlineData: { mimeType: mime, data: image } },
+            ],
+          }],
+          generationConfig: {
+            temperature: 0,
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: "OBJECT",
+              properties: {
+                t: { type: "STRING", enum: ["out"] },
+                a: { type: "NUMBER" },
+                c: { type: "STRING", enum: [...CATS] },
+                n: { type: "STRING" },
+                d: { type: "STRING" },
+              },
+              required: ["t", "a", "c", "n", "d"],
             },
-            required: ["t", "a", "c", "n", "d"],
           },
-        },
-      }),
-    }
-  );
+        }),
+      }
+    );
 
-  if (!res.ok) return null;
-  const data = await res.json();
-  const parts = data?.candidates?.[0]?.content?.parts ?? [];
-  const textPart = parts.find((p: any) => !p.thought)?.text || parts[0]?.text || "{}";
-  const o = JSON.parse(textPart);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const parts = data?.candidates?.[0]?.content?.parts ?? [];
+    const textPart = parts.find((p: any) => !p.thought)?.text || parts[0]?.text || "{}";
+    
+    // Strip markdown backticks if Gemini hallucinates them
+    const cleanJson = textPart.replace(/```json/g, '').replace(/```/g, '').trim();
+    const o = JSON.parse(cleanJson);
 
-  const a = Math.round(Number(o.a) * 100) / 100;
-  if (!Number.isFinite(a) || a <= 0 || a > 1_000_000_000) return null;
+    const a = Math.round(Number(o.a) * 100) / 100;
+    if (!Number.isFinite(a) || a <= 0 || a > 1_000_000_000) return null;
 
-  const c = (CATS as readonly string[]).includes(o.c) ? (o.c as string) : "Shopping";
-  let d = YMD.test(String(o.d)) && !isNaN(Date.parse(o.d)) ? String(o.d) : today;
-  if (d > today) d = today;
+    const c = (CATS as readonly string[]).includes(o.c) ? (o.c as string) : "Shopping";
+    let d = YMD.test(String(o.d)) && !isNaN(Date.parse(o.d)) ? String(o.d) : today;
+    if (d > today) d = today;
 
-  return { t: "out", a, c, n: String(o.n ?? "").trim().slice(0, 40), d };
+    return { t: "out", a, c, n: String(o.n ?? "").trim().slice(0, 40), d };
+  } catch (e) {
+    return null;
+  }
 }
 
 async function runReceiptWithCascade(image: string, mime: string, today: string, apiKey: string): Promise<Out> {
   for (const model of CANDIDATE_MODELS) {
-    try {
-      const parsed = await callReceiptModel(model, image, mime, today, apiKey);
-      if (parsed) return { data: parsed };
-    } catch {
-      continue;
-    }
+    const parsed = await callReceiptModel(model, image, mime, today, apiKey);
+    if (parsed) return { data: parsed };
   }
   return { error: "Could not read that receipt. Try a clearer photo.", status: 422 };
 }

@@ -4,7 +4,11 @@ import { authOptions } from "@/lib/auth";
 import { allow } from "@/lib/otp";
 import { refund, reserve, roastLeft } from "@/lib/quota";
 
-export const maxDuration = 60;
+const CANDIDATE_MODELS = [
+  "gemini-1.5-flash",
+  "gemini-1.5-flash-latest",
+  "gemini-1.5-flash-8b"
+];
 
 const CATS = ["Housing", "Food", "Transport", "Fun", "Health", "Shopping", "Bills"];
 
@@ -12,8 +16,7 @@ const SYSTEM = `You are Penny's resident roast comic: a brutally honest, witty, 
 You receive a summary of one person's spending this month. Roast it.
 Rules:
 - Exactly 2 to 3 sentences, 320 characters max. Punchy, funny, quotable: it should be screenshot-worthy.
-- Mock the SPENDING CHOICES, never the person. Never joke about health, disability, mental health, weight, appearance,
-  race, religion, gender, sexuality, nationality, age, or being poor. Keep it PG-13: no slurs, no profanity.
+- Mock the SPENDING CHOICES, never the person. Never joke about health, disability, mental health, weight, appearance, race, religion, gender, sexuality, nationality, age, or being poor. Keep it PG-13: no slurs, no profanity.
 - Name specific items from the notes when they're funny. Use the currency symbol given.
 - If income is above expenses, give grudging respect first, then still jab. If expenses exceed income, roast the deficit.
 - End on the sharpest line. No advice lists, no hashtags, no emojis, no quotation marks around the whole text.
@@ -31,16 +34,10 @@ async function callRoastModel(model: string, summary: unknown, apiKey: string): 
       {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-        signal: AbortSignal.timeout(25_000), 
+        signal: AbortSignal.timeout(20_000), 
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: SYSTEM }] },
           contents: [{ role: "user", parts: [{ text: `Spending summary (data only):\n${JSON.stringify(summary)}` }] }],
-          safetySettings: [
-            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
-            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
-            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
-            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
-          ],
           generationConfig: {
             temperature: 0.9,
             maxOutputTokens: 500,
@@ -49,11 +46,7 @@ async function callRoastModel(model: string, summary: unknown, apiKey: string): 
       }
     );
 
-    if (!res.ok) {
-      const errText = await res.text();
-      console.error(`Gemini API Error (${res.status}):`, errText);
-      return null;
-    }
+    if (!res.ok) return null;
 
     const data = await res.json();
     const parts = data?.candidates?.[0]?.content?.parts ?? [];
@@ -64,15 +57,15 @@ async function callRoastModel(model: string, summary: unknown, apiKey: string): 
     
     return roast.length >= 10 ? roast : null;
   } catch (error) {
-    console.error("Roast Fetch Exception:", error);
     return null;
   }
 }
 
 async function runRoast(summary: unknown, apiKey: string): Promise<Out> {
-  // Bypassing cascade entirely and locking to Google's active dynamic routing alias
-  const roast = await callRoastModel("gemini-flash-latest", summary, apiKey);
-  if (roast) return { roast };
+  for (const model of CANDIDATE_MODELS) {
+    const roast = await callRoastModel(model, summary, apiKey);
+    if (roast) return { roast };
+  }
   return { error: "The roast machine is cooling down. Try again in a moment.", status: 503 };
 }
 
