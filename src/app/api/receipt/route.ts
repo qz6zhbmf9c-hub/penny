@@ -48,8 +48,9 @@ async function runReceiptGroq(image: string, mime: string, today: string, apiKey
             ]
           }
         ],
-        response_format: { type: "json_object" },
+        // Vision models reject response_format. We removed it and added max_tokens instead.
         temperature: 0,
+        max_tokens: 500,
       }),
     });
 
@@ -62,6 +63,7 @@ async function runReceiptGroq(image: string, mime: string, today: string, apiKey
     const data = await res.json();
     const textPart = data.choices?.[0]?.message?.content || "{}";
     
+    // Clean markdown blocks if the AI wraps the output in ```json
     const cleanJson = textPart.replace(/```json/gi, '').replace(/```/g, '').trim();
     const o = JSON.parse(cleanJson);
 
