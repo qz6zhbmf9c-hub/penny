@@ -223,3 +223,160 @@ svg { overflow: visible; }
 
 
 .roast { margin: 0; padding: 12px 14px; border-left: 3px solid var(--ac2); background: rgba(217, 179, 91, 0.12); border-radius: 0 10px 10px 0; font-size: 16px; line-height: 1.5; }
+
+
+/* =====================================================================
+   MOBILE UX POLISH: iOS-style app shell (ivory + midnight navy + gold)
+   ===================================================================== */
+:root { --spring: cubic-bezier(0.22, 1, 0.36, 1); }
+
+/* Crisp keyboard focus */
+button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--ac); outline-offset: 2px; }
+input[hidden] { display: none !important; }
+
+/* Shared building blocks (all screen sizes) */
+.top-actions { display: flex; gap: 6px; align-items: center; }
+select.sel { background: var(--card); border: 1px solid var(--bd); color: var(--tx); padding: 0.5rem 0.75rem; border-radius: 0.75rem; font: inherit; font-size: 0.875rem; font-weight: 600; min-height: 40px; }
+.tabbar, .mobile-only, .rs-short { display: none; }
+
+/* Charts */
+.donut-wrap { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.donut-svg { max-width: 100%; height: auto; }
+.donut-legend { flex: 1; min-width: 140px; }
+.bars-svg { display: block; max-width: 100%; height: auto; }
+
+/* Transactions: search bar + add form (desktop keeps the original one-row layout) */
+.txbar { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.txbar input { flex: 1; min-width: 0; background: var(--card); border: 1px solid var(--bd); color: var(--tx); padding: 0.5rem 1rem; border-radius: 0.5rem; outline: none; font-family: inherit; box-sizing: border-box; }
+.txbar input:focus { border-color: var(--ac); box-shadow: 0 0 0 3px rgba(42, 76, 176, 0.18); }
+.txbar button { white-space: nowrap; }
+
+.txform { margin-top: 1rem; align-items: center; }
+.txform .txform-actions { display: contents; }
+.txform .txbtn { flex: 0 0 auto; gap: 8px; font-size: 18px; padding: 0 10px; min-height: 40px; margin: 0; }
+.txform .txbtn .lbl { display: none; }
+.txform select, .txform input { margin: 0; min-height: 40px; padding: 8px 12px; }
+.txform .f-type, .txform .f-cat { width: auto; }
+.txform .f-amt { width: 100px; }
+.txform .f-note { flex: 1; min-width: 160px; }
+.txform .f-date { width: 140px; }
+.txform .f-add { flex: 0 0 auto; min-height: 40px; padding: 0 20px; margin: 0; }
+
+/* Budgets + goals inputs */
+.bd-input { width: 84px; min-height: 36px; padding: 4px 8px; background: var(--card); border: 1px solid var(--bd); color: var(--tx); border-radius: 0.5rem; font-family: inherit; text-align: right; }
+.bd-input:disabled { opacity: 0.6; }
+.goalform { flex-wrap: nowrap; align-items: center; }
+.goalform input { flex: 1; min-width: 0; width: auto; }
+
+/* ---------------------------------------------------------------------
+   PHONES (<= 768px)
+   --------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  body { overflow-x: hidden; overflow-x: clip; -webkit-text-size-adjust: 100%; }
+  .center { min-height: 100dvh; }
+
+  /* 1. Frosted header: logo left, Pro + streak right */
+  .top {
+    min-height: 60px; gap: 10px;
+    padding: calc(8px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right)) 8px max(16px, env(safe-area-inset-left));
+    background: rgba(246, 241, 230, 0.78);
+    -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+  }
+  .tabs-desktop, .desk-only { display: none !important; }
+  .top-actions { gap: 8px; }
+  .top-actions button { min-height: 44px; padding: 0 14px; font-size: 0.8125rem; white-space: nowrap; }
+
+  /* 2. Fixed bottom tab bar (iOS style, frosted glass) */
+  .tabbar {
+    display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; gap: 0;
+    padding: 6px max(8px, env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left));
+    background: rgba(246, 241, 230, 0.74);
+    -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+    border-top: 1px solid rgba(14, 27, 51, 0.12);
+    box-shadow: 0 -10px 30px -20px rgba(14, 27, 51, 0.5);
+  }
+  .tabbar button {
+    flex: 1; min-width: 0; min-height: 52px; padding: 4px 2px; border-radius: 14px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    background: none; border: 0; color: var(--mut); font-size: 10.5px; font-weight: 600; letter-spacing: 0.01em;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .tabbar button.on { background: none; color: var(--tx); }
+  .tabbar .ic { position: relative; display: grid; place-items: center; width: 52px; height: 30px; transition: transform 0.25s var(--spring); }
+  .tabbar .ic::before { content: ""; position: absolute; inset: 0; border-radius: 999px; background: rgba(217, 179, 91, 0.34); opacity: 0; transform: scale(0.6); transition: transform 0.3s var(--spring), opacity 0.2s; }
+  .tabbar button.on .ic::before { opacity: 1; transform: scale(1); }
+  .tabbar button:active .ic { transform: scale(0.9); }
+  .tabbar .ic svg { position: relative; width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; overflow: visible; }
+  .tabbar button.on .ic svg { stroke: var(--ac); }
+  .tabbar span:last-child { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .mobile-only { display: block; }
+
+  /* 3. Spacing: more room for the content, grids stack */
+  main { padding: 16px max(16px, env(safe-area-inset-right)) calc(96px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left)); }
+  .grid { gap: 0.875rem; }
+  .grid > * { min-width: 0; }
+  .g2, .g4 { grid-template-columns: 1fr; }
+  .card { padding: 1.25rem; border-radius: 1.25rem; }
+  .big { font-size: 1.75rem; overflow-wrap: anywhere; }
+  .card.hero .big { font-size: 2.25rem; }
+
+  /* Touch targets + no iOS zoom-on-focus */
+  button.p, button.s, a.p, a.s { min-height: 44px; }
+  button.x { min-width: 44px; min-height: 44px; }
+  input, select, textarea { font-size: 16px; }
+  .form input, .form select, .field input, .txbar input { min-height: 48px; }
+  .bd-input { min-height: 44px; font-size: 16px; }
+  .txbar { gap: 10px; }
+
+  /* 4. Transactions form: stacked, full-width, big touch targets */
+  .txform { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  .txform .txform-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .txform .txbtn {
+    width: 100%; min-height: 56px; border-radius: 16px; font-size: 15px; padding: 0 12px;
+    background: linear-gradient(180deg, rgba(217, 179, 91, 0.22), rgba(217, 179, 91, 0.08));
+    border-color: rgba(154, 98, 0, 0.30);
+  }
+  .txform .txbtn .ico { font-size: 22px; line-height: 1; }
+  .txform .txbtn .lbl { display: inline; }
+  .txform select, .txform input { width: 100%; min-width: 0; min-height: 48px; padding: 10px 14px; border-radius: 0.875rem; box-sizing: border-box; }
+  .txform .f-amt, .txform .f-date, .txform .f-type, .txform .f-cat, .txform .f-note { width: 100%; min-width: 0; flex: none; }
+  .txform input[type="date"] { -webkit-appearance: none; appearance: none; text-align: left; }
+  .txform .f-add { width: 100%; min-height: 52px; border-radius: 1rem; font-size: 16px; }
+  .stackform > * { flex: 1 1 100%; }
+  .stackform button { min-height: 48px; }
+
+  /* Transaction rows */
+  .tx { gap: 0.75rem; padding: 0.875rem 0; }
+  .tx .m { min-width: 0; }
+  .tx .m b, .tx .m .sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tx > b { white-space: nowrap; }
+
+  /* 5. Charts scale to the card, never scroll sideways */
+  .donut-wrap { flex-direction: column; align-items: stretch; gap: 14px; }
+  .donut-svg { width: min(220px, 72vw); margin: 0 auto; display: block; }
+  .donut-legend { width: 100%; min-width: 0; }
+
+  /* Toast floats above the tab bar */
+  #toast {
+    left: 50%; right: auto; bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+    max-width: calc(100vw - 32px); text-align: center; border-radius: 999px; padding: 0.65rem 1.1rem;
+    transform: translate(-50%, 1rem);
+  }
+  #toast.on { transform: translate(-50%, 0); }
+}
+
+/* Very small phones (iPhone SE and narrower) */
+@media (max-width: 400px) {
+  .top .logo { font-size: 1.1rem; }
+  .top-actions { gap: 6px; }
+  .top-actions button { padding: 0 12px; }
+  .rs-long { display: none; }
+  .rs-short { display: inline; }
+  .tabbar .ic { width: 44px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tabbar .ic, .tabbar .ic::before, #toast { transition: none; }
+  .mic.rec { animation: none; }
+}

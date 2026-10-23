@@ -173,7 +173,7 @@ export function Overview({ txs, f, isPro, onUpgrade }: { txs: Tx[]; f: Fmt } & G
     <>
       <div className="grid g4">
         {/* Total Balance Hero Card aligned Top-Left */}
-        <div className="card hero" style={{ padding: "1.5rem", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "flex-start", textAlign: "left" }}>
+        <div className="card hero" style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "flex-start", textAlign: "left" }}>
           <h3 style={{ textAlign: "left", margin: "0 0 0.5rem 0", color: "var(--mut)" }}>Total balance</h3>
           <div className="big" style={{ textAlign: "left", margin: "0.25rem 0" }}>{f(bal)}</div>
           <div className="sub" style={{ textAlign: "left" }}>All accounts</div>
@@ -426,47 +426,49 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
     <>
       <div className="card">
         <h3>Add transaction</h3>
-        <div className="form" style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", marginTop: "1rem" }}>
-          <button
-            type="button"
-            className={"s mic" + (listening ? " rec" : "")}
-            onClick={mic}
-            disabled={parsing}
-            aria-label={listening ? "Stop recording" : "Log by voice"}
-            title={outOfCredits ? "Voice logging (Pro)" : "Log by voice"}
-            style={{ flex: "0 0 auto", fontSize: 18, padding: "0 10px", minHeight: 40, margin: 0 }}
-          >
-            {parsing && !scanning ? "⏳" : listening ? "🔴" : outOfCredits ? "🎙️🔒" : "🎙️"}
-          </button>
-          <button
-            type="button"
-            className="s"
-            onClick={receipt}
-            disabled={parsing || listening}
-            aria-label="Scan a receipt"
-            title={outOfCredits ? "Receipt scanner (Pro)" : "Scan a receipt"}
-            style={{ flex: "0 0 auto", fontSize: 18, padding: "0 10px", minHeight: 40, margin: 0 }}
-          >
-            {scanning ? "📸⏳" : outOfCredits ? "📸🔒" : "📸"}
-          </button>
+        <div className="form txform">
+          <div className="txform-actions">
+            <button
+              type="button"
+              className={"s txbtn mic" + (listening ? " rec" : "")}
+              onClick={mic}
+              disabled={parsing}
+              aria-label={listening ? "Stop recording" : "Log by voice"}
+              title={outOfCredits ? "Voice logging (Pro)" : "Log by voice"}
+            >
+              <span className="ico">{parsing && !scanning ? "⏳" : listening ? "🔴" : outOfCredits ? "🎙️🔒" : "🎙️"}</span>
+              <span className="lbl">{listening ? "Stop" : "Voice"}</span>
+            </button>
+            <button
+              type="button"
+              className="s txbtn"
+              onClick={receipt}
+              disabled={parsing || listening}
+              aria-label="Scan a receipt"
+              title={outOfCredits ? "Receipt scanner (Pro)" : "Scan a receipt"}
+            >
+              <span className="ico">{scanning ? "📸⏳" : outOfCredits ? "📸🔒" : "📸"}</span>
+              <span className="lbl">{scanning ? "Reading…" : "Scan receipt"}</span>
+            </button>
+          </div>
           <input ref={fileRef} type="file" accept="image/*" capture="environment" hidden onChange={onFile} />
-          
-          <select value={t} onChange={(e) => setT(e.target.value as "in" | "out")} style={{ width: "auto", minHeight: 40, margin: 0, padding: "8px 12px" }}>
+
+          <select className="f-type" aria-label="Type" value={t} onChange={(e) => setT(e.target.value as "in" | "out")}>
             <option value="out">Expense</option>
             <option value="in">Income</option>
           </select>
-          
-          <input type="number" min="0" placeholder="Amount" value={a} onChange={(e) => setA(e.target.value)} style={{ width: 100, minHeight: 40, margin: 0, padding: "8px 12px" }} />
-          
-          <select value={c} onChange={(e) => setC(e.target.value)} style={{ width: "auto", minHeight: 40, margin: 0, padding: "8px 12px" }}>
+
+          <input className="f-amt" type="number" inputMode="decimal" min="0" placeholder="Amount" aria-label="Amount" value={a} onChange={(e) => setA(e.target.value)} />
+
+          <select className="f-cat" aria-label="Category" value={c} onChange={(e) => setC(e.target.value)}>
             {Object.keys(C).map((k) => <option key={k}>{k}</option>)}
           </select>
-          
-          <input placeholder="Note (e.g. Coffee)" value={n} onChange={(e) => setN(e.target.value)} style={{ flex: 1, minWidth: 160, minHeight: 40, margin: 0, padding: "8px 12px" }} />
-          
-          <input type="date" value={d} onChange={(e) => setD(e.target.value)} style={{ width: 140, minHeight: 40, margin: 0, padding: "8px 12px" }} />
-          
-          <button className="p" onClick={add} style={{ flex: "0 0 auto", minHeight: 40, padding: "0 20px", margin: 0 }}>Add</button>
+
+          <input className="f-note" placeholder="Note (e.g. Coffee)" aria-label="Note" value={n} onChange={(e) => setN(e.target.value)} />
+
+          <input className="f-date" type="date" aria-label="Date" value={d} onChange={(e) => setD(e.target.value)} />
+
+          <button className="p f-add" onClick={add}>Add</button>
         </div>
         
         <p className="sub" style={{ margin: "12px 0 0" }}>
@@ -491,8 +493,8 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
       </div>
       
       <div className="card" style={{ marginTop: 14 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
-          <input placeholder="Search…" value={q} onChange={(e) => setQ(e.target.value)} style={{ flex: 1 }} />
+        <div className="txbar">
+          <input placeholder="Search…" aria-label="Search transactions" value={q} onChange={(e) => setQ(e.target.value)} />
           <button className="s" onClick={csv}>Copy CSV{isPro ? "" : " 🔒"}</button>
         </div>
         {list.length ? list.map((x) => (
@@ -522,7 +524,7 @@ export function BudgetsView({ txs, budgets, f, isPro, onUpgrade, onSave }: {
             <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
               <b>{c}</b>
               <span className="sub">{f(s)} of <input key={l} type="number" defaultValue={l} disabled={!isPro}
-                onBlur={(e) => +e.target.value !== l && onSave(c, +e.target.value)} style={{ width: 84, padding: "4px 6px" }} /></span>
+                onBlur={(e) => +e.target.value !== l && onSave(c, +e.target.value)} className="bd-input" inputMode="decimal" aria-label={`${c} budget`} /></span>
             </div>
             <div className="bar"><i style={{ width: Math.min(p, 100) + "%", background: p > 100 ? "var(--bad)" : p > 80 ? "var(--warn)" : C[c] }} /></div>
             {p > 100 && <span className="sub neg">Over budget by {f(s - l)}</span>}
@@ -542,7 +544,7 @@ function GoalCard({ g, f, onFund, onDelete }: { g: Goal; f: Fmt; onFund: (id: st
       <div className="big">{f(g.s)} <span className="sub">of {f(g.t)}</span></div>
       <div className="bar"><i style={{ width: p + "%", background: "linear-gradient(90deg,var(--ac),var(--ac2))" }} /></div>
       <div className="sub">{Math.round(p)}% there</div>
-      <div className="form" style={{ marginTop: 10 }}>
+      <div className="form goalform" style={{ marginTop: 10 }}>
         <input type="number" placeholder="Add funds" value={v} onChange={(e) => setV(e.target.value)} />
         <button className="s" onClick={() => { if (+v) { onFund(g.id, +v); setV(""); } }}>Add</button>
         <button className="x" onClick={() => onDelete(g.id)}>✕</button>
@@ -561,7 +563,7 @@ export function GoalsView({ goals, f, isPro, onUpgrade, onAdd, onFund, onDelete 
         {goals.map((g) => <GoalCard key={g.id} g={g} f={f} onFund={onFund} onDelete={onDelete} />)}
         <div className="card">
           <h3>New goal</h3>
-          <div className="form">
+          <div className="form stackform">
             <input placeholder="Goal name" value={n} onChange={(e) => setN(e.target.value)} />
             <input type="number" placeholder="Target" value={t} onChange={(e) => setT(e.target.value)} />
             <button className="p" onClick={() => { if (n && +t) { onAdd(n, +t); setN(""); setT(""); } }}>Create</button>

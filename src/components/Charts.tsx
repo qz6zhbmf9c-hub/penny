@@ -8,8 +8,8 @@ export function Donut({ data, f }: { data: Record<string, number>; f: (n: number
     return { c, v, p, off };
   });
   return (
-    <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
-      <svg width="150" height="150" viewBox="0 0 42 42">
+    <div className="donut-wrap">
+      <svg className="donut-svg" width="150" height="150" viewBox="0 0 42 42">
         <circle cx="21" cy="21" r="15.9" fill="none" stroke="var(--bd)" strokeWidth="5.5" />
         {seg.map((s) => (
           <circle key={s.c} cx="21" cy="21" r="15.9" fill="none" stroke={C[s.c] || "#999"} strokeWidth="5.5"
@@ -17,7 +17,7 @@ export function Donut({ data, f }: { data: Record<string, number>; f: (n: number
         ))}
         <text x="21" y="22.5" textAnchor="middle" fontSize="5" fontWeight="800" fill="var(--tx)">{f(total)}</text>
       </svg>
-      <div style={{ flex: 1, minWidth: 140 }}>
+      <div className="donut-legend">
         {seg.length ? seg.map((s) => (
           <div className="lg" key={s.c}><s style={{ background: C[s.c] }} />{s.c}<span>{f(s.v)}</span></div>
         )) : <span className="sub">No spending yet</span>}
@@ -32,7 +32,7 @@ export function Bars({ txs }: { txs: Tx[] }) {
   const mx = Math.max(1, ...d.flat());
   return (
     <>
-      <svg viewBox="0 0 360 160" width="100%">
+      <svg className="bars-svg" viewBox="0 0 360 160" width="100%">
         {d.map((v, i) => {
           const x = i * 60 + 8, h1 = (v[0] / mx) * 115, h2 = (v[1] / mx) * 115;
           return (

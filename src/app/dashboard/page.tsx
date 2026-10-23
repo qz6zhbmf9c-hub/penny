@@ -15,6 +15,25 @@ const TABS: [View, string][] = [
   ["pr", "Profile"],
 ];
 
+// Short labels so five tabs fit on an iPhone SE
+const SHORT: Record<View, string> = { ov: "Overview", tx: "Activity", bd: "Budgets", gl: "Goals", pr: "Profile" };
+const FULL: Record<View, string> = { ov: "Overview", tx: "Transactions", bd: "Budgets", gl: "Goals", pr: "Profile" };
+
+function TabIcon({ k }: { k: View }) {
+  switch (k) {
+    case "ov":
+      return (<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="2" /><rect x="13.5" y="3" width="7.5" height="7.5" rx="2" /><rect x="3" y="13.5" width="7.5" height="7.5" rx="2" /><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2" /></svg>);
+    case "tx":
+      return (<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v16M7 20l-3-3M7 20l3-3" /><path d="M17 20V4M17 4l-3 3M17 4l3 3" /></svg>);
+    case "bd":
+      return (<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9" /><path d="M12 3a9 9 0 0 1 9 9h-9z" /></svg>);
+    case "gl":
+      return (<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1.2" /></svg>);
+    default:
+      return (<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" /></svg>);
+  }
+}
+
 type StreakData = {
   streak: number;
   lastDate: string;      // YYYY-MM-DD
@@ -192,7 +211,7 @@ export default function Home() {
   if (!session) return <LoginCard />;
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "var(--bg)", color: "var(--tx)" }}>
+    <div style={{ minHeight: "100dvh", backgroundColor: "var(--bg)", color: "var(--tx)" }}>
       <div className="top">
         <a
           href="https://mypenny.net"
@@ -201,14 +220,15 @@ export default function Home() {
         >
           Penny<i>.</i>
         </a>
-        <nav>{TABS.map(([k, label]) => <button key={k} className={k === view ? "on" : ""} onClick={() => setView(k)}>{label}</button>)}</nav>
-        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-          <select value={cur} onChange={(e) => setCur(e.target.value)}>{CURRENCIES.map((c) => <option key={c}>{c}</option>)}</select>
+        <nav className="tabs-desktop" aria-label="Sections">{TABS.map(([k, label]) => <button key={k} className={k === view ? "on" : ""} onClick={() => setView(k)}>{label}</button>)}</nav>
+        <div className="top-actions">
+          <select className="sel desk-only" aria-label="Currency" value={cur} onChange={(e) => setCur(e.target.value)}>{CURRENCIES.map((c) => <option key={c}>{c}</option>)}</select>
           {isPro ? <button className="s" disabled>✨ Pro</button> : <button className="p" onClick={upgrade}>Go Pro</button>}
           <button
             type="button"
             className="s"
             onClick={handleStreakClick}
+            aria-label={isPro ? `${streak}-day streak` : "Daily streak (Pro)"}
             title={
               !isPro
                 ? "Daily streak (Pro)"
@@ -220,13 +240,18 @@ export default function Home() {
             {isPro ? (
               <>
                 🔥 {streak}
-                {lostStreak > 0 && ` · Restore (${lostStreak + 1})`}
+                {lostStreak > 0 && (
+                  <>
+                    <span className="rs-long"> · Restore ({lostStreak + 1})</span>
+                    <span className="rs-short"> ↺ {lostStreak + 1}</span>
+                  </>
+                )}
               </>
             ) : (
               "🔥🔒"
             )}
           </button>
-          <button className="s" onClick={() => signOut({ callbackUrl: "/dashboard" })}>Sign out</button>
+          <button className="s desk-only" onClick={() => signOut({ callbackUrl: "/dashboard" })}>Sign out</button>
         </div>
       </div>
       <main>
@@ -246,8 +271,39 @@ export default function Home() {
             onFund={(id, v) => guard(async () => { await api.fundGoal(id, v); setGoals(await api.goals()); })}
             onDelete={(id) => guard(async () => { await api.deleteGoal(id); setGoals(await api.goals()); })} />
         )}
-        {view === "pr" && <ProfileView />}
+        {view === "pr" && (
+          <>
+            {/* Phones: the currency picker and sign-out live here instead of the header */}
+            <div className="card mobile-only" style={{ marginBottom: 14 }}>
+              <h3>Preferences</h3>
+              <div className="prow">
+                <span>Currency</span>
+                <select className="sel" aria-label="Currency" value={cur} onChange={(e) => setCur(e.target.value)}>{CURRENCIES.map((c) => <option key={c}>{c}</option>)}</select>
+              </div>
+              <div className="prow">
+                <span>Session</span>
+                <button className="s" onClick={() => signOut({ callbackUrl: "/dashboard" })}>Sign out</button>
+              </div>
+            </div>
+            <ProfileView />
+          </>
+        )}
       </main>
+      {/* Phones: iOS-style frosted bottom tab bar (hidden on desktop via CSS) */}
+      <nav className="tabbar" aria-label="Primary">
+        {TABS.map(([k]) => (
+          <button
+            key={k}
+            className={k === view ? "on" : ""}
+            aria-label={FULL[k]}
+            aria-current={k === view ? "page" : undefined}
+            onClick={() => { setView(k); window.scrollTo({ top: 0 }); }}
+          >
+            <span className="ic"><TabIcon k={k} /></span>
+            <span>{SHORT[k]}</span>
+          </button>
+        ))}
+      </nav>
       <div id="toast" className={toast ? "on" : ""}>{toast}</div>
     </div>
   );
