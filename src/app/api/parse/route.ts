@@ -34,7 +34,7 @@ async function runParseGroq(text: string, today: string, apiKey: string): Promis
       },
       signal: AbortSignal.timeout(10_000),
       body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
+        model: "openai/gpt-oss-20b",
         messages: [
           { role: "system", content: SYSTEM },
           { role: "user", content: `Today is ${today}. Speech: "${text}"` }
