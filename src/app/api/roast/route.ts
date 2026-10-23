@@ -41,7 +41,11 @@ async function runRoastGroq(summary: unknown, apiKey: string): Promise<Out> {
       }),
     });
 
-    if (!res.ok) return { error: "The roast machine is cooling down. Try again in a moment.", status: 503 };
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error("Groq Roast API Error:", errText);
+      return { error: "The roast machine is cooling down. Try again in a moment.", status: 503 };
+    }
 
     const data = await res.json();
     const textPart = data.choices?.[0]?.message?.content || "";
@@ -52,6 +56,7 @@ async function runRoastGroq(summary: unknown, apiKey: string): Promise<Out> {
     if (roast.length < 10) return { error: "Couldn't come up with a roast.", status: 422 };
     return { roast };
   } catch (error) {
+    console.error("Groq Roast Exception:", error);
     return { error: "Couldn't reach the roast machine. Try again.", status: 500 };
   }
 }

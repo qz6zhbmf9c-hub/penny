@@ -37,7 +37,7 @@ async function runReceiptGroq(image: string, mime: string, today: string, apiKey
       },
       signal: AbortSignal.timeout(15_000),
       body: JSON.stringify({
-        model: "llama-3.2-11b-vision-preview",
+        model: "llama-3.2-90b-vision-preview",
         messages: [
           { role: "system", content: SYSTEM },
           {

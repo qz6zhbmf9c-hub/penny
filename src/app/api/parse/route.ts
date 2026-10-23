@@ -34,7 +34,7 @@ async function runParseGroq(text: string, today: string, apiKey: string): Promis
       },
       signal: AbortSignal.timeout(10_000),
       body: JSON.stringify({
-        model: "llama-3.1-8b-instant",
+        model: "llama-3.3-70b-versatile",
         messages: [
           { role: "system", content: SYSTEM },
           { role: "user", content: `Today is ${today}. Speech: "${text}"` }
@@ -44,7 +44,11 @@ async function runParseGroq(text: string, today: string, apiKey: string): Promis
       }),
     });
 
-    if (!res.ok) return { error: "The AI service is busy. Try again.", status: 502 };
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error("Groq Parse API Error:", errText);
+      return { error: "The AI service is busy. Try again.", status: 502 };
+    }
     
     const data = await res.json();
     const textPart = data.choices?.[0]?.message?.content || "{}";
@@ -60,6 +64,7 @@ async function runParseGroq(text: string, today: string, apiKey: string): Promis
 
     return { data: { t: o.t === "in" ? "in" : "out", a, c, n: String(o.n ?? "").trim().slice(0, 40), d } };
   } catch (e) {
+    console.error("Groq Parse Exception:", e);
     return { error: "Couldn't understand that. Try again.", status: 422 };
   }
 }
