@@ -1,7 +1,6 @@
 "use client";
 import LoginCard from "@/components/LoginCard";
 import ProfileView from "@/components/ProfileView";
-import "../globals.css";
 import { useCallback, useEffect, useState } from "react";
 import { signOut, useSession } from "next-auth/react";
 import { api } from "@/lib/api";
@@ -156,7 +155,6 @@ export default function Home() {
     }
   }
 
-  // Handle upgrade polling and URL cleanup smoothly
   useEffect(() => {
     if (typeof window === "undefined") return;
     const hasUpgradedParam = window.location.search.includes("upgraded=1");
@@ -194,7 +192,7 @@ export default function Home() {
   if (!session) return <LoginCard />;
 
   return (
-    <>
+    <div style={{ minHeight: "100vh", backgroundColor: "var(--bg)", color: "var(--tx)" }}>
       <div className="top">
         <a
           href="https://mypenny.net"
@@ -251,6 +249,6 @@ export default function Home() {
         {view === "pr" && <ProfileView />}
       </main>
       <div id="toast" className={toast ? "on" : ""}>{toast}</div>
-    </>
+    </div>
   );
 }

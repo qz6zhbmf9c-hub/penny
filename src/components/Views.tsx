@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { FREE_AI_LIMIT } from "@/lib/limits";
 import { useUsage } from "@/lib/useUsage";
 import { useEffect, useRef, useState } from "react";
@@ -107,19 +108,30 @@ function RoastCard({ txs, f, isPro, onUpgrade }: { txs: Tx[]; f: Fmt } & Gate) {
   }
 
   return (
-    <div className="card" style={{ marginTop: 14, minHeight: 130, position: "relative", overflow: "hidden" }}>
-      <h3>💀 AI Roast</h3>
+    <div className="card" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: 130, position: "relative", overflow: "hidden" }}>
+      <div>
+        <h3>💀 AI Roast</h3>
+        {open ? (
+          <>
+            {roast && <p className="roast" style={{ margin: "8px 0 16px" }}>{roast}</p>}
+            {err && <p className="sub neg" role="alert" style={{ margin: "10px 0 0" }}>{err}</p>}
+            {!roast && !err && !busy && (
+              <p className="sub" style={{ margin: "8px 0 16px" }}>
+                Penny reads this month's spending and verbally destroys your financial choices.
+              </p>
+            )}
+          </>
+        ) : (
+          <p className="roast" style={{ filter: "blur(5px)", userSelect: "none", opacity: 0.6, margin: "8px 0 16px" }}>
+            You spent $140 on DoorDash this week but your fridge is full of rotting spinach. Your 'budget' is just vibes and denial. 
+          </p>
+        )}
+      </div>
+
       {open ? (
-        <>
-          {roast && <p className="roast" style={{ fontSize: "16px", fontWeight: "500", borderLeft: "4px solid var(--tx)", paddingLeft: "12px", margin: 0 }}>{roast}</p>}
-          {err && <p className="sub neg" role="alert" style={{ margin: "10px 0 0" }}>{err}</p>}
-          {!roast && !err && !busy && (
-            <p className="sub" style={{ margin: "0 0 10px" }}>
-              Penny reads this month's spending and verbally destroys your financial choices.
-            </p>
-          )}
-          <div className="form" style={{ marginTop: roast ? 12 : 0 }}>
-            <button className="p" onClick={go} disabled={busy} style={{ flex: "0 0 auto", opacity: busy ? 0.7 : 1, background: busy ? "#333" : "var(--tx)" }}>
+        <div>
+          <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+            <button className="p" onClick={go} disabled={busy} style={{ flex: "0 0 auto", opacity: busy ? 0.7 : 1 }}>
               {busy ? "💀 Loading insults..." : roast ? `💀 Roast me again${exhausted ? " 🔒" : ""}` : "💀 Roast my spending"}
             </button>
             {roast && (
@@ -133,18 +145,13 @@ function RoastCard({ txs, f, isPro, onUpgrade }: { txs: Tx[]; f: Fmt } & Gate) {
               {left > 0 ? `🔥 You have ${left} free roast remaining. Make it count.` : "🔒 Free roast used. Go Pro to keep getting yelled at."}
             </p>
           )}
-        </>
+        </div>
       ) : (
-        <>
-          <p className="roast" style={{ filter: "blur(5px)", userSelect: "none", opacity: 0.6, margin: 0 }}>
-            You spent $140 on DoorDash this week but your fridge is full of rotting spinach. Your 'budget' is just vibes and denial. 
-          </p>
-          <div className="lock" style={{ position: "absolute", top: "45%", left: "50%", transform: "translate(-50%, -50%)", textAlign: "center", width: "100%", background: "transparent" }}>
-            <b style={{ fontSize: "18px" }}>🔒 Pro Feature</b>
-            <p className="sub" style={{ margin: "4px 0 12px" }}>Get unlimited roasts of your actual spending.</p>
-            <button className="p" onClick={onUpgrade} style={{ padding: "6px 16px", margin: "0 auto", display: "block" }}>Unlock for $19</button>
-          </div>
-        </>
+        <div className="lock" style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", textAlign: "center", width: "100%", background: "transparent", padding: 0 }}>
+          <b style={{ fontSize: "18px" }}>🔒 Pro Feature</b>
+          <p className="sub" style={{ margin: "4px 0 12px" }}>Get unlimited roasts of your actual spending.</p>
+          <button className="p" onClick={onUpgrade} style={{ padding: "6px 16px", margin: "0 auto", display: "block" }}>Unlock for $19</button>
+        </div>
       )}
     </div>
   );
@@ -165,7 +172,12 @@ export function Overview({ txs, f, isPro, onUpgrade }: { txs: Tx[]; f: Fmt } & G
   return (
     <>
       <div className="grid g4">
-        <div className="card hero"><h3>Total balance</h3><div className="big">{f(bal)}</div><div className="sub">All accounts</div></div>
+        {/* Total Balance Hero Card aligned Top-Left */}
+        <div className="card hero" style={{ padding: "1.5rem", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "flex-start", textAlign: "left" }}>
+          <h3 style={{ textAlign: "left", margin: "0 0 0.5rem 0", color: "var(--mut)" }}>Total balance</h3>
+          <div className="big" style={{ textAlign: "left", margin: "0.25rem 0" }}>{f(bal)}</div>
+          <div className="sub" style={{ textAlign: "left" }}>All accounts</div>
+        </div>
         <div className="card"><h3>Income</h3><div className="big pos">{f(inc)}</div><div className="sub">This month</div></div>
         <div className="card"><h3>Spending</h3><div className="big">{f(exp)}</div><div className={"sub " + (ch > 0 ? "neg" : "pos")}>{ch > 0 ? "▲" : "▼"} {Math.abs(ch)}% vs last month</div></div>
         <div className="card"><h3>Savings rate</h3><div className={"big " + (rate >= 0 ? "pos" : "neg")}>{rate}%</div><div className="sub">Of income kept</div></div>
@@ -174,22 +186,26 @@ export function Overview({ txs, f, isPro, onUpgrade }: { txs: Tx[]; f: Fmt } & G
         <div className="card"><h3>Spending by category</h3><Donut data={sp} f={f} /></div>
         <div className="card"><h3>Last 6 months</h3><Bars txs={txs} /></div>
       </div>
-      <div className="card" style={{ marginTop: 14, minHeight: 130 }}>
-        <h3>✨ Smart insights</h3>
-        {isPro ? (
-          <div className="grid" style={{ gap: 8 }}>
-            <div>📌 Your biggest category is <b>{top ? top[0] : "—"}</b> ({f(top ? top[1] : 0)}, {top ? Math.round((top[1] / Math.max(exp, 1)) * 100) : 0}% of spending).</div>
-            <div>📈 At this pace you&apos;ll spend <b>{f(proj)}</b> by month end{inc ? <> — leaving <b className={inc - proj >= 0 ? "pos" : "neg"}>{f(inc - proj)}</b></> : null}.</div>
-            <div>{ch > 10 ? `⚠️ Spending is up ${ch}% versus last month.` : "✅ Spending is stable versus last month."}</div>
-          </div>
-        ) : (
-          <>
-            <div style={{ filter: "blur(4px)" }}>Your biggest category is Food. At this pace you&apos;ll spend more than last month.</div>
-            <Lock onUpgrade={onUpgrade} />
-          </>
-        )}
+      
+      {/* Wrapped Insights and Roast into a 2-Column Grid */}
+      <div className="grid g2" style={{ marginTop: 14 }}>
+        <div className="card" style={{ display: "flex", flexDirection: "column" }}>
+          <h3>✨ Smart insights</h3>
+          {isPro ? (
+            <div className="grid" style={{ gap: 12, marginTop: 8 }}>
+              <div>📌 Biggest expense: <b>{top ? top[0] : "—"}</b> ({f(top ? top[1] : 0)}, {top ? Math.round((top[1] / Math.max(exp, 1)) * 100) : 0}% of spending).</div>
+              <div>📈 Month-end projection: <b>{f(proj)}</b> {inc ? <>(Leaving <b className={inc - proj >= 0 ? "pos" : "neg"}>{f(inc - proj)}</b>)</> : null}.</div>
+              <div>{ch > 10 ? `⚠️ Spending is up ${ch}% versus last month.` : "✅ Spending is controlled versus last month."}</div>
+            </div>
+          ) : (
+            <>
+              <div style={{ filter: "blur(4px)", marginTop: 8 }}>Your biggest category is Food. At this pace you&apos;ll spend more than last month.</div>
+              <Lock onUpgrade={onUpgrade} />
+            </>
+          )}
+        </div>
+        <RoastCard txs={txs} f={f} isPro={isPro} onUpgrade={onUpgrade} />
       </div>
-      <RoastCard txs={txs} f={f} isPro={isPro} onUpgrade={onUpgrade} />
     </>
   );
 }
@@ -199,7 +215,8 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
 } & Gate) {
   const [t, setT] = useState<"in" | "out">("out");
   const [a, setA] = useState(""); const [c, setC] = useState("Food");
-  const [n, setN] = useState(""); const [d, setD] = useState(new Date().toISOString().slice(0, 10));
+  const [n, setN] = useState(""); 
+  const [d, setD] = useState("");
   const [q, setQ] = useState("");
   const [listening, setListening] = useState(false);
   const [parsing, setParsing] = useState(false);
@@ -208,6 +225,11 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
   const recRef = useRef<any>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const transcriptRef = useRef("");
+
+  useEffect(() => {
+    // Setup initial date on client to avoid hydration mismatch and UTC desync
+    setD(new Date().toLocaleDateString("en-CA"));
+  }, []);
 
   const outOfCredits = !isPro && usage !== null && usage.aiLeft <= 0;
 
@@ -221,10 +243,7 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
   const list = txs.filter((x) => (x.n + x.c).toLowerCase().includes(q.toLowerCase()))
     .sort((x, y) => y.d.localeCompare(x.d) || y.id.localeCompare(x.id)).slice(0, 60);
 
-  const localToday = () => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-  };
+  const localToday = () => new Date().toLocaleDateString("en-CA");
 
   function paywall() {
     notify("🤖 Compute isn't free. You've hit your limit! Unlock Lifetime Pro for $19.");
@@ -238,7 +257,7 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
 
   async function add() {
     if (!+a) return notify("Enter an amount");
-    await onAdd({ d, t, c: t === "in" ? "Income" : c, n, a: +a });
+    await onAdd({ d: d || localToday(), t, c: t === "in" ? "Income" : c, n, a: +a });
     setA(""); setN(""); notify("Added ✓");
   }
 
@@ -407,7 +426,7 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
     <>
       <div className="card">
         <h3>Add transaction</h3>
-        <div className="form">
+        <div className="form" style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", marginTop: "1rem" }}>
           <button
             type="button"
             className={"s mic" + (listening ? " rec" : "")}
@@ -415,7 +434,7 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
             disabled={parsing}
             aria-label={listening ? "Stop recording" : "Log by voice"}
             title={outOfCredits ? "Voice logging (Pro)" : "Log by voice"}
-            style={{ flex: "0 0 auto", fontSize: 18 }}
+            style={{ flex: "0 0 auto", fontSize: 18, padding: "0 10px", minHeight: 40, margin: 0 }}
           >
             {parsing && !scanning ? "⏳" : listening ? "🔴" : outOfCredits ? "🎙️🔒" : "🎙️"}
           </button>
@@ -426,30 +445,43 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
             disabled={parsing || listening}
             aria-label="Scan a receipt"
             title={outOfCredits ? "Receipt scanner (Pro)" : "Scan a receipt"}
-            style={{ flex: "0 0 auto", fontSize: 18 }}
+            style={{ flex: "0 0 auto", fontSize: 18, padding: "0 10px", minHeight: 40, margin: 0 }}
           >
             {scanning ? "📸⏳" : outOfCredits ? "📸🔒" : "📸"}
           </button>
           <input ref={fileRef} type="file" accept="image/*" capture="environment" hidden onChange={onFile} />
-          <select value={t} onChange={(e) => setT(e.target.value as "in" | "out")}><option value="out">Expense</option><option value="in">Income</option></select>
-          <input type="number" min="0" placeholder="Amount" value={a} onChange={(e) => setA(e.target.value)} />
-          <select value={c} onChange={(e) => setC(e.target.value)}>{Object.keys(C).map((k) => <option key={k}>{k}</option>)}</select>
-          <input placeholder="Note" value={n} onChange={(e) => setN(e.target.value)} />
-          <input type="date" value={d} onChange={(e) => setD(e.target.value)} />
-          <button className="p" onClick={add}>Add</button>
+          
+          <select value={t} onChange={(e) => setT(e.target.value as "in" | "out")} style={{ width: "auto", minHeight: 40, margin: 0, padding: "8px 12px" }}>
+            <option value="out">Expense</option>
+            <option value="in">Income</option>
+          </select>
+          
+          <input type="number" min="0" placeholder="Amount" value={a} onChange={(e) => setA(e.target.value)} style={{ width: 100, minHeight: 40, margin: 0, padding: "8px 12px" }} />
+          
+          <select value={c} onChange={(e) => setC(e.target.value)} style={{ width: "auto", minHeight: 40, margin: 0, padding: "8px 12px" }}>
+            {Object.keys(C).map((k) => <option key={k}>{k}</option>)}
+          </select>
+          
+          <input placeholder="Note (e.g. Coffee)" value={n} onChange={(e) => setN(e.target.value)} style={{ flex: 1, minWidth: 160, minHeight: 40, margin: 0, padding: "8px 12px" }} />
+          
+          <input type="date" value={d} onChange={(e) => setD(e.target.value)} style={{ width: 140, minHeight: 40, margin: 0, padding: "8px 12px" }} />
+          
+          <button className="p" onClick={add} style={{ flex: "0 0 auto", minHeight: 40, padding: "0 20px", margin: 0 }}>Add</button>
         </div>
-        <p className="sub" style={{ margin: "8px 0 0" }}>
+        
+        <p className="sub" style={{ margin: "12px 0 0" }}>
           {listening ? "Listening… speak, then tap the mic again to stop 🔴" :
            scanning ? "Reading your receipt…" :
            parsing ? "Understanding what you said…" :
            "🎙️ Say “I spent 40 bucks on gas yesterday”  ·  📸 or snap a photo of a receipt"}
         </p>
+        
         {!isPro && usage && (
-          <div className="sub" style={{ margin: "12px 0 0", padding: "10px", background: "rgba(138, 43, 226, 0.1)", borderRadius: "8px", border: "1px solid rgba(138, 43, 226, 0.2)" }}>
+          <div className="sub" style={{ margin: "12px 0 0", padding: "10px", background: "rgba(217, 179, 91, 0.12)", borderRadius: "8px", border: "1px solid rgba(217, 179, 91, 0.25)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span>⚡ <b>{usage.aiLeft} of {FREE_AI_LIMIT}</b> free AI actions left</span>
               {usage.aiLeft === 0 ? (
-                <button type="button" onClick={onUpgrade} style={{ background: "var(--tx)", color: "#fff", border: "none", padding: "4px 10px", borderRadius: "6px", cursor: "pointer", fontWeight: "bold" }}>Unlock Pro</button>
+                <Link href="/dashboard" className="p" style={{ padding: "4px 10px", borderRadius: "6px", fontSize: "12px", textDecoration: "none" }}>Unlock Pro</Link>
               ) : (
                 <span style={{ fontSize: "12px", opacity: 0.7 }}>Lifetime Pro: $19</span>
               )}
@@ -457,6 +489,7 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
           </div>
         )}
       </div>
+      
       <div className="card" style={{ marginTop: 14 }}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
           <input placeholder="Search…" value={q} onChange={(e) => setQ(e.target.value)} style={{ flex: 1 }} />
@@ -491,7 +524,7 @@ export function BudgetsView({ txs, budgets, f, isPro, onUpgrade, onSave }: {
               <span className="sub">{f(s)} of <input key={l} type="number" defaultValue={l} disabled={!isPro}
                 onBlur={(e) => +e.target.value !== l && onSave(c, +e.target.value)} style={{ width: 84, padding: "4px 6px" }} /></span>
             </div>
-            <div className="bar"><i style={{ width: Math.min(p, 100) + "%", background: p > 100 ? "var(--bad)" : p > 80 ? "#f59e0b" : C[c] }} /></div>
+            <div className="bar"><i style={{ width: Math.min(p, 100) + "%", background: p > 100 ? "var(--bad)" : p > 80 ? "var(--warn)" : C[c] }} /></div>
             {p > 100 && <span className="sub neg">Over budget by {f(s - l)}</span>}
           </div>
         );

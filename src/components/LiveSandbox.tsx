@@ -42,7 +42,6 @@ const INITIAL_GOALS: Goal[] = [
   { id: "g3", n: "MacBook Pro M5 💻", t: 2500, s: 1900 },
 ];
 
-// Shorter, punchier, deeper AI roasts formatted for side-by-side cards
 const DEMO_ROASTS = [
   "You make $6,400 but spend like you won the lottery. $78 on delivery sushi while your kitchen gathers dust? Do better.",
   "Your savings rate is decent, but Equinox and DoorDash are fighting a war for your wallet. Pick a struggle.",
@@ -51,23 +50,17 @@ const DEMO_ROASTS = [
 
 export default function LiveSandbox() {
   const containerRef = useRef<HTMLDivElement>(null);
-  
-  // The gate that prevents Next.js from crashing during prerender
   const [mounted, setMounted] = useState(false);
-// Listens to scroll and dynamically updates CSS variables for the nav animations
+
   useEffect(() => {
     const handleScroll = () => {
       const scrollY = window.scrollY;
-      
-      // Finishes eating by 650px of scrolling (guaranteed to hit 100% on all screen sizes)
       const clip = Math.max(0, Math.min(100, ((scrollY - 50) / 800) * 100));
       document.documentElement.style.setProperty("--nav-clip", `${clip}%`);
       
-      // The star turns on right as the darkness finishes eating the toolbar
       const spark = clip > 85 ? 1 : 0;
       document.documentElement.style.setProperty("--spark-opacity", `${spark}`);
 
-      // The exact moment the toolbar is 100% eaten, trigger the 2-second fade
       const logoOp = clip === 100 ? 0 : 1;
       document.documentElement.style.setProperty("--logo-opacity", `${logoOp}`);
     };
@@ -80,6 +73,7 @@ export default function LiveSandbox() {
       document.documentElement.style.setProperty("--logo-opacity", "1");
     };
   }, []);
+  
   const [glassPhase, setGlassPhase] = useState<"waiting" | "visible" | "fading" | "gone">("waiting");
 
   const [view, setView] = useState<View>("ov");
@@ -112,10 +106,9 @@ export default function LiveSandbox() {
     setTimeout(() => setToast(""), 2800);
   };
 
-  // Safe client-side initialization
   useEffect(() => {
     setMounted(true);
-    setD(new Date().toISOString().slice(0, 10));
+    setD(new Date().toLocaleDateString("en-CA"));
   }, []);
 
   useEffect(() => {
@@ -141,7 +134,6 @@ export default function LiveSandbox() {
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [glassPhase]);
 
-  // THIS STOPS THE SERVER FROM RENDERING THE CHARTS AND CRASHING
   if (!mounted) {
     return (
       <section className="wrap sandbox-sec" aria-label="Interactive Live Demo" style={{ minHeight: 800, opacity: 0 }}>
@@ -151,7 +143,6 @@ export default function LiveSandbox() {
     );
   }
 
-  // Safe client-side calculations
   const k = ym(0), p = ym(1);
   const inc = sum(mTx(txs, k).filter((x) => x.t === "in"), (x) => x.a);
   const exp = sum(mTx(txs, k).filter((x) => x.t === "out"), (x) => x.a);
@@ -172,7 +163,7 @@ export default function LiveSandbox() {
 
   function addTx() {
     if (!+a) return notify("Enter an amount first");
-    const newTx: Tx = { id: "demo_" + Date.now(), d: d || new Date().toISOString().slice(0, 10), t, c: t === "in" ? "Income" : c, n: n.trim() || (t === "in" ? "Income" : c), a: +a };
+    const newTx: Tx = { id: "demo_" + Date.now(), d: d || new Date().toLocaleDateString("en-CA"), t, c: t === "in" ? "Income" : c, n: n.trim() || (t === "in" ? "Income" : c), a: +a };
     setTxs((prev) => [newTx, ...prev]);
     setA(""); setN("");
     notify("Added to live demo ✓ Check Overview to see charts update!");
@@ -183,7 +174,7 @@ export default function LiveSandbox() {
     setSimBusy("voice");
     notify("🎙️ Listening: “I spent 42 bucks on gas today”...");
     setTimeout(() => {
-      setT("out"); setA("42"); setC("Transport"); setN("Gas"); setD(new Date().toISOString().slice(0, 10));
+      setT("out"); setA("42"); setC("Transport"); setN("Gas"); setD(new Date().toLocaleDateString("en-CA"));
       setSimBusy(null); notify("Filled from Gemini AI Voice ✓ Tap Add!");
     }, 1100);
   }
@@ -193,7 +184,7 @@ export default function LiveSandbox() {
     setSimBusy("receipt");
     notify("📸 Scanning sample Whole Foods receipt...");
     setTimeout(() => {
-      setT("out"); setA("64.50"); setC("Food"); setN("Whole Foods Market"); setD(new Date().toISOString().slice(0, 10));
+      setT("out"); setA("64.50"); setC("Food"); setN("Whole Foods Market"); setD(new Date().toLocaleDateString("en-CA"));
       setSimBusy(null); notify("Extracted from Receipt Photo ✓ Tap Add!");
     }, 1200);
   }
@@ -268,7 +259,7 @@ export default function LiveSandbox() {
             {view === "ov" && (
               <>
                 <div className="grid g4">
-                  <div className="card" style={{ background: "linear-gradient(to bottom right, rgba(129, 140, 248, 0.1), rgba(167, 139, 250, 0.05))", borderColor: "rgba(129, 140, 248, 0.3)" }}>
+                  <div className="card hero" style={{ padding: "1.5rem" }}>
                     <h3>Total balance</h3>
                     <div className="big">{f(bal)}</div>
                     <div className="sub">All accounts</div>
@@ -295,7 +286,6 @@ export default function LiveSandbox() {
                   <div className="card"><h3>Last 6 months</h3><Bars txs={txs} /></div>
                 </div>
 
-                {/* SIDE BY SIDE: Smart Insights & AI Roast */}
                 <div className="grid g2" style={{ marginTop: 14 }}>
                   <div className="card" style={{ display: "flex", flexDirection: "column" }}>
                     <h3>✨ Smart insights</h3>
@@ -309,7 +299,7 @@ export default function LiveSandbox() {
                   <div className="card" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
                     <div>
                       <h3>💀 AI Roast</h3>
-                      <p style={{ fontSize: "15px", fontWeight: 500, borderLeft: "4px solid var(--ac2)", paddingLeft: "12px", margin: "8px 0 16px" }}>{DEMO_ROASTS[roastIdx]}</p>
+                      <p className="roast" style={{ margin: "8px 0 16px" }}>{DEMO_ROASTS[roastIdx]}</p>
                     </div>
                     <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
                       <button className="p" onClick={triggerRoast} disabled={roastBusy}>{roastBusy ? "💀 Sharpening insults..." : "💀 Roast me again"}</button>
@@ -324,7 +314,6 @@ export default function LiveSandbox() {
               <>
                 <div className="card">
                   <h3>Add transaction (Try it live!)</h3>
-                  {/* FIXED HORIZONTAL LAYOUT: Flex wrap prevents awkward inputs dropping to a new line */}
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
                     <button type="button" className="s" onClick={simulateVoice} title="Simulate Gemini Voice Input" style={{ fontSize: 18, padding: "0 10px", minHeight: 40 }}>{simBusy === "voice" ? "⏳" : "🎙️"}</button>
                     <button type="button" className="s" onClick={simulateReceipt} title="Simulate Gemini Receipt Scan" style={{ fontSize: 18, padding: "0 10px", minHeight: 40 }}>{simBusy === "receipt" ? "⏳" : "📸"}</button>

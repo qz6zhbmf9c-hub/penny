@@ -4,8 +4,8 @@ export type Budgets = Record<string, number>;
 export type View = "ov" | "tx" | "bd" | "gl" | "pr";
 
 export const C: Record<string, string> = {
-  Housing: "#6366f1", Food: "#f59e0b", Transport: "#06b6d4", Fun: "#ec4899",
-  Health: "#10b981", Shopping: "#8b5cf6", Bills: "#ef4444",
+  Housing: "#2A4CB0", Food: "#C9821A", Transport: "#3F7FCF", Fun: "#7C4FD0",
+  Health: "#CF557F", Shopping: "#BF5426", Bills: "#A3223A",
 };
 export const CURRENCIES = ["$", "€", "£", "TND", "CAD", "AED"];
 

@@ -480,7 +480,7 @@ export default function Home() {
           </div>
           <div className="tablewrap">
             <table className="matrix">
-              <caption className="sr">Penny Free plan versus Penny Pro plan feature comparison</caption>
+              <caption className="sr">Penny Free plan versus Penny plan feature comparison</caption>
               <thead>
                 <tr>
                   <th scope="col">Feature</th>
@@ -560,7 +560,7 @@ export default function Home() {
             <a href={`mailto:${CONTACT_EMAIL}`}>Contact</a>
           </nav>
           <p>
-            © {YEAR} Penny (mypenny.net) · Built by <strong style={{ color: "var(--tx)" }}>{FOUNDER}</strong>. All rights reserved.
+            © {YEAR} Penny (mypenny.net) · Built by <strong style={{ color: "#ffffff" }}>{FOUNDER}</strong>. All rights reserved.
           </p>
         </div>
       </footer>

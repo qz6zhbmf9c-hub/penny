@@ -11,7 +11,7 @@ export default function Image() {
         style={{
           width: "100%", height: "100%", display: "flex", flexDirection: "column",
           justifyContent: "center", padding: 90, color: "white",
-          background: "linear-gradient(135deg,#0d0f15 0%,#1e1b4b 60%,#6d28d9 100%)",
+          background: "linear-gradient(135deg,#0C1D44 0%,#091531 60%,#060E22 100%)",
         }}
       >
         <div style={{ fontSize: 180, fontWeight: 800, letterSpacing: -6 }}>Penny.</div>
