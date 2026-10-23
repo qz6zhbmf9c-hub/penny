@@ -37,7 +37,7 @@ async function runReceiptGroq(image: string, mime: string, today: string, apiKey
       },
       signal: AbortSignal.timeout(15_000),
       body: JSON.stringify({
-        model: "meta-llama/llama-4-scout-17b-16e-instruct",
+        model: "qwen/qwen3.8-27b",
         messages: [
           { role: "system", content: SYSTEM },
           {
@@ -48,9 +48,8 @@ async function runReceiptGroq(image: string, mime: string, today: string, apiKey
             ]
           }
         ],
-        // Vision models reject response_format. We removed it and added max_tokens instead.
+        response_format: { type: "json_object" },
         temperature: 0,
-        max_tokens: 500,
       }),
     });
 
@@ -63,7 +62,6 @@ async function runReceiptGroq(image: string, mime: string, today: string, apiKey
     const data = await res.json();
     const textPart = data.choices?.[0]?.message?.content || "{}";
     
-    // Clean markdown blocks if the AI wraps the output in ```json
     const cleanJson = textPart.replace(/```json/gi, '').replace(/```/g, '').trim();
     const o = JSON.parse(cleanJson);
 
