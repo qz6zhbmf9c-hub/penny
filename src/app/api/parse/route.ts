@@ -37,36 +37,26 @@ async function callParseModel(model: string, text: string, today: string, apiKey
       {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-        signal: AbortSignal.timeout(10_000),
+        signal: AbortSignal.timeout(15_000),
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: SYSTEM }] },
           contents: [{ role: "user", parts: [{ text: `Today is ${today}. Speech: "${text}"` }] }],
           generationConfig: {
             temperature: 0,
             responseMimeType: "application/json",
-            responseSchema: {
-              type: "OBJECT",
-              properties: {
-                t: { type: "STRING", enum: ["in", "out"] },
-                a: { type: "NUMBER" },
-                c: { type: "STRING", enum: [...CATS] },
-                n: { type: "STRING" },
-                d: { type: "STRING" },
-              },
-              required: ["t", "a", "c", "n", "d"],
-            },
           },
         }),
       }
     );
 
     if (!res.ok) return null;
+    
     const data = await res.json();
     const parts = data?.candidates?.[0]?.content?.parts ?? [];
     const textPart = parts.find((p: any) => !p.thought)?.text || parts[0]?.text || "{}";
     
-    // Strip markdown backticks if Gemini hallucinates them
-    const cleanJson = textPart.replace(/```json/g, '').replace(/```/g, '').trim();
+    // Strip markdown backticks (case-insensitive) if Gemini hallucinates them
+    const cleanJson = textPart.replace(/```json/gi, '').replace(/```/g, '').trim();
     const o = JSON.parse(cleanJson);
 
     const a = Math.round(Number(o.a) * 100) / 100;

@@ -39,7 +39,7 @@ async function callReceiptModel(model: string, image: string, mime: string, toda
       {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-        signal: AbortSignal.timeout(12_000),
+        signal: AbortSignal.timeout(15_000),
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: SYSTEM }] },
           contents: [{
@@ -73,8 +73,8 @@ async function callReceiptModel(model: string, image: string, mime: string, toda
     const parts = data?.candidates?.[0]?.content?.parts ?? [];
     const textPart = parts.find((p: any) => !p.thought)?.text || parts[0]?.text || "{}";
     
-    // Strip markdown backticks if Gemini hallucinates them
-    const cleanJson = textPart.replace(/```json/g, '').replace(/```/g, '').trim();
+    // Strip markdown backticks (case-insensitive) if Gemini hallucinates them
+    const cleanJson = textPart.replace(/```json/gi, '').replace(/```/g, '').trim();
     const o = JSON.parse(cleanJson);
 
     const a = Math.round(Number(o.a) * 100) / 100;
