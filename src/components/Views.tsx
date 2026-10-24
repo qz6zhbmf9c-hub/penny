@@ -157,6 +157,9 @@ function RoastCard({ txs, f, isPro, onUpgrade }: { txs: Tx[]; f: Fmt } & Gate) {
   );
 }
 
+// Picks a size class for big numbers so long values ($1,116,298 / TND 12,116,298) still fit the square mobile tiles
+const fit = (s: string) => (s.length <= 7 ? "" : s.length <= 9 ? " fit-m" : s.length <= 11 ? " fit-s" : " fit-xs");
+
 export function Overview({ txs, f, isPro, onUpgrade }: { txs: Tx[]; f: Fmt } & Gate) {
   const k = ym(0), p = ym(1);
   const inc = sum(mTx(txs, k).filter((x) => x.t === "in"), (x) => x.a);
@@ -172,15 +175,26 @@ export function Overview({ txs, f, isPro, onUpgrade }: { txs: Tx[]; f: Fmt } & G
   return (
     <>
       <div className="grid g4">
-        {/* Total Balance Hero Card aligned Top-Left */}
-        <div className="card hero" style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "flex-start", textAlign: "left" }}>
-          <h3 style={{ textAlign: "left", margin: "0 0 0.5rem 0", color: "var(--mut)" }}>Total balance</h3>
-          <div className="big" style={{ textAlign: "left", margin: "0.25rem 0" }}>{f(bal)}</div>
-          <div className="sub" style={{ textAlign: "left" }}>All accounts</div>
+        <div className="card stat hero">
+          <h3>Total balance</h3>
+          <div className={"big" + fit(f(bal))}>{f(bal)}</div>
+          <div className="sub">All accounts</div>
         </div>
-        <div className="card"><h3>Income</h3><div className="big pos">{f(inc)}</div><div className="sub">This month</div></div>
-        <div className="card"><h3>Spending</h3><div className="big">{f(exp)}</div><div className={"sub " + (ch > 0 ? "neg" : "pos")}>{ch > 0 ? "▲" : "▼"} {Math.abs(ch)}% vs last month</div></div>
-        <div className="card"><h3>Savings rate</h3><div className={"big " + (rate >= 0 ? "pos" : "neg")}>{rate}%</div><div className="sub">Of income kept</div></div>
+        <div className="card stat">
+          <h3>Income</h3>
+          <div className={"big pos" + fit(f(inc))}>{f(inc)}</div>
+          <div className="sub">This month</div>
+        </div>
+        <div className="card stat">
+          <h3>Spending</h3>
+          <div className={"big" + fit(f(exp))}>{f(exp)}</div>
+          <div className={"sub " + (ch > 0 ? "neg" : "pos")}>{ch > 0 ? "▲" : "▼"} {Math.abs(ch)}% vs last month</div>
+        </div>
+        <div className="card stat">
+          <h3>Savings rate</h3>
+          <div className={"big " + (rate >= 0 ? "pos" : "neg") + fit(`${rate}%`)}>{rate}%</div>
+          <div className="sub">Of income kept</div>
+        </div>
       </div>
       <div className="grid g2" style={{ marginTop: 14 }}>
         <div className="card"><h3>Spending by category</h3><Donut data={sp} f={f} /></div>

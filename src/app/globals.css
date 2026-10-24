@@ -317,16 +317,42 @@ select.sel { background: var(--card); border: 1px solid var(--bd); color: var(--
   .grid { gap: 0.875rem; }
   .grid > * { min-width: 0; }
   .g2 { grid-template-columns: 1fr; }
-  .g4 { grid-template-columns: repeat(2, 1fr); }
-  .g4 .card {
-    aspect-ratio: 1 / 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center !important;
-  }
   .card { padding: 1.25rem; border-radius: 1.25rem; }
   .big { font-size: 1.75rem; overflow-wrap: anywhere; }
-  .card.hero .big { font-size: 1.75rem; }
+
+  /* iOS-widget stat tiles: 2x2 perfect squares, everything aligned top-left */
+  .g4 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(10px, 3.2vw, 14px); }
+  .g4 > .card {
+    aspect-ratio: 1 / 1; min-width: 0; min-height: 0; overflow: hidden;
+    padding: clamp(12px, 3.6vw, 16px); border-radius: 1.375rem;
+    display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start;
+    gap: 0; text-align: left;
+    container-type: inline-size;
+  }
+  .g4 > .card h3 {
+    margin: 0; max-width: 100%; text-align: left;
+    font-size: 0.6875rem; line-height: 1.2; letter-spacing: 0.06em;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .g4 > .card .big {
+    margin: 0.5rem 0 0.25rem; max-width: 100%; text-align: left;
+    font-size: clamp(1.25rem, 6.4vw, 1.75rem); line-height: 1.05; letter-spacing: -0.025em;
+    white-space: nowrap; font-variant-numeric: tabular-nums;
+  }
+  .g4 > .card .big.fit-m  { font-size: clamp(1.05rem, 5.2vw, 1.5rem); }
+  .g4 > .card .big.fit-s  { font-size: clamp(0.85rem, 4.4vw, 1.25rem); }
+  .g4 > .card .big.fit-xs { font-size: clamp(0.75rem, 3.8vw, 1.1rem); }
+  .g4 > .card .sub {
+    margin: 0; max-width: 100%; text-align: left; font-size: 0.75rem; line-height: 1.3; overflow-wrap: anywhere;
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden;
+  }
+  /* Where container units exist, numbers scale with the tile itself */
+  @supports (font-size: 1cqw) {
+    .g4 > .card .big        { font-size: clamp(1.25rem, 20cqw, 2.25rem); }
+    .g4 > .card .big.fit-m  { font-size: clamp(1.05rem, 16cqw, 2rem); }
+    .g4 > .card .big.fit-s  { font-size: clamp(0.95rem, 13.5cqw, 1.75rem); }
+    .g4 > .card .big.fit-xs { font-size: clamp(0.85rem, 11.5cqw, 1.5rem); }
+  }
 
   /* Touch targets + no iOS zoom-on-focus */
   button.p, button.s, a.p, a.s { min-height: 44px; }
@@ -381,6 +407,7 @@ select.sel { background: var(--card); border: 1px solid var(--bd); color: var(--
   .rs-long { display: none; }
   .rs-short { display: inline; }
   .tabbar .ic { width: 44px; }
+  .g4 > .card .sub { font-size: 0.6875rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {

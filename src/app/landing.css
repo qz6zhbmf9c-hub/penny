@@ -561,22 +561,106 @@ body:has(.lp) {
   transform: translateY(0) scale(1);
 }
 
-.lp .liquid-img {
-  width: 100%;
-  max-width: 720px;
-  height: auto;
-  margin: 0 auto;
+/* =====================================================================
+   Premium welcome text: polished chrome + gold foil, etched into the veil
+   ===================================================================== */
+.lp .pwt-float {
   display: block;
-  filter: drop-shadow(0 25px 40px rgba(14, 27, 51, 0.3));
-  transform: scale(1.05);
+}
+
+.lp .pwt {
+  position: relative;
+  display: block;
+  max-width: 880px;
+  margin: 0 auto;
+  text-align: center;
   user-select: none;
   pointer-events: none;
-  opacity: 0.95;
+  font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  font-weight: 800;
+  font-size: clamp(2rem, 7.2vw, 4.75rem);
+  line-height: 1.02;
+  letter-spacing: -0.045em;
+  /* White lip underneath = "etched into the glass", plus a soft ambient shadow */
+  filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.85)) drop-shadow(0 18px 28px rgba(14, 27, 51, 0.22));
+}
+
+.lp .pwt-line {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  column-gap: 0.26em;
+}
+
+.lp .pwt-line + .pwt-line {
+  margin-top: 0.04em;
+}
+
+/* Mask each word so it can slide up out of nothing (padding keeps descenders and italics from being clipped) */
+.lp .pwt-mask {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  padding: 0.08em 0.14em 0.2em;
+  margin: -0.08em -0.14em -0.2em;
+}
+
+.lp .pwt-word {
+  display: inline-block;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  background-repeat: no-repeat;
+  background-size: 300% 100%, 100% 100%;
+  background-position: 100% 0, 0 0;
+  will-change: transform, filter, opacity;
+  /* The sheen sweeps word by word, starting after the entrance finishes */
+  animation: pwt-sheen 5.4s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+  animation-delay: calc(1.5s + var(--i, 0) * 0.16s);
+}
+
+/* Polished chrome: dark top, bright "horizon" reflection, dark bottom */
+.lp .pwt-chrome {
+  -webkit-text-stroke: 0.5px rgba(14, 27, 51, 0.35);
+  background-image:
+    linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, 0.95) 50%, transparent 60%),
+    linear-gradient(180deg, #0a1530 0%, #14285c 38%, #2f55c8 49%, #9fb8f0 50%, #1b3170 52%, #0e1b33 100%);
+}
+
+/* Gold foil in the brand's serif italic */
+.lp .pwt-gold {
+  font-family: "Instrument Serif", Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 1.12em;
+  letter-spacing: -0.02em;
+  -webkit-text-stroke: 0.5px rgba(107, 67, 0, 0.4);
+  background-image:
+    linear-gradient(105deg, transparent 40%, rgba(255, 252, 235, 0.95) 50%, transparent 60%),
+    linear-gradient(180deg, #5c3a00 0%, #a86f00 30%, #e0b04a 48%, #f4d47a 50%, #b8801e 52%, #6b4300 100%);
+}
+
+/* Hairline foil rule that draws itself in */
+.lp .pwt-rule {
+  display: block;
+  width: min(220px, 40%);
+  height: 2px;
+  margin: 0.55rem auto 0;
+  border-radius: 2px;
+  transform-origin: center;
+  background: linear-gradient(90deg, transparent, #b8862e, #f4d47a, #b8862e, transparent);
+}
+
+@keyframes pwt-sheen {
+  0%   { background-position: 100% 0, 0 0; }
+  38%  { background-position: 0% 0, 0 0; }
+  100% { background-position: 0% 0, 0 0; }
 }
 
 .lp .liquid-sub {
   display: inline-block;
-  margin-top: 14px;
+  margin-top: 24px;
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -1351,10 +1435,6 @@ body:has(.lp) {
 
 /* =========================================================
    LIVE SANDBOX: self-contained ivory theme
-   Re-declares every token the demo uses, so it looks right
-   no matter what the page-level (:root / .lp) tokens are.
-   The inline `var(--bg)` on inputs and selects now resolves
-   to a light cream field instead of the dark page navy.
    ========================================================= */
 .lp .sandbox-app {
   --bg: #FBF8F1;
@@ -1419,7 +1499,6 @@ body:has(.lp) {
   box-shadow: 0 0 0 3px rgba(42, 76, 176, 0.18);
 }
 
-/* Buttons and links (the "Save My Data" / "Create Free Account" links are <a>, not <button>) */
 .lp .sandbox-app button.p,
 .lp .sandbox-app a.p {
   display: inline-flex;
@@ -1442,3 +1521,81 @@ body:has(.lp) {
 
 .lp .sandbox-app .bar { background: #E6DDC8; border-color: rgba(14, 27, 51, 0.10); }
 .lp .sandbox-app .tx { border-bottom-color: var(--bd); }
+
+.lp .sandbox-tabbar {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  /* 1. Hide desktop nav and style iOS bottom tab bar */
+  .lp .sandbox-desk-nav {
+    display: none !important;
+  }
+  .lp .sandbox-app .top {
+    flex-direction: row;
+    align-items: center;
+    padding: 12px 16px;
+  }
+  .lp .sandbox-body {
+    max-height: 520px; /* Leave room for the tab bar below */
+  }
+  .lp .sandbox-tabbar {
+    display: flex;
+    position: relative;
+    border-top: 1px solid rgba(14, 27, 51, 0.12);
+    background: rgba(246, 241, 230, 0.74);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    padding: 8px 8px 12px;
+    z-index: 40;
+  }
+  .lp .sandbox-tabbar button {
+    flex: 1; min-height: 52px; padding: 4px 2px; border-radius: 14px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    background: none; border: 0; color: var(--mut); font-size: 10.5px; font-weight: 600;
+  }
+  .lp .sandbox-tabbar button.on { color: var(--tx); }
+  .lp .sandbox-tabbar .ic { position: relative; display: grid; place-items: center; width: 52px; height: 30px; }
+  .lp .sandbox-tabbar .ic svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+  .lp .sandbox-tabbar button.on .ic svg { stroke: var(--ac); }
+  
+  /* 2. Apply the 2x2 grid to the 4 overview cards */
+  .lp .sandbox-app .grid.g4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .lp .sandbox-app .grid.g4 .card {
+    aspect-ratio: 1 / 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 1rem;
+  }
+  .lp .sandbox-app .card.hero .big {
+    font-size: 1.5rem;
+  }
+  
+  /* 3. Stack the charts and AI Roast cards vertically */
+  .lp .sandbox-app .grid.g2 {
+    grid-template-columns: 1fr;
+  }
+  
+  /* 4. Force all transaction and goal inputs to full width on mobile */
+  .lp .sandbox-app input, 
+  .lp .sandbox-app select {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: none !important;
+    margin-bottom: 8px !important;
+  }
+  
+  /* 5. Make action buttons (like "Add" or "Create") full width */
+  .lp .sandbox-app button.p {
+    width: 100% !important;
+  }
+}
+@media (max-width: 768px) {
+  /* Hides the long fake URL bar on phones so the page stops stretching horizontally */
+  .lp .chrome-url {
+    display: none;
+  }
+}

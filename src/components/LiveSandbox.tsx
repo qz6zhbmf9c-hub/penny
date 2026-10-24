@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import PremiumWelcomeText from "./PremiumWelcomeText";
 import { Bars, Donut } from "./Charts";
 import { Budgets, C, CURRENCIES, Goal, Tx, View, mTx, spendBy, sum, ym } from "@/lib/penny";
 
@@ -11,6 +12,24 @@ const TABS: [View, string][] = [
   ["gl", "Goals"],
   ["pr", "Profile"],
 ];
+
+const SHORT: Record<View, string> = { ov: "Overview", tx: "Activity", bd: "Budgets", gl: "Goals", pr: "Profile" };
+const FULL: Record<View, string> = { ov: "Overview", tx: "Transactions", bd: "Budgets", gl: "Goals", pr: "Profile" };
+
+function TabIcon({ k }: { k: View }) {
+  switch (k) {
+    case "ov":
+      return (<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="2" /><rect x="13.5" y="3" width="7.5" height="7.5" rx="2" /><rect x="3" y="13.5" width="7.5" height="7.5" rx="2" /><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2" /></svg>);
+    case "tx":
+      return (<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v16M7 20l-3-3M7 20l3-3" /><path d="M17 20V4M17 4l-3 3M17 4l3 3" /></svg>);
+    case "bd":
+      return (<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9" /><path d="M12 3a9 9 0 0 1 9 9h-9z" /></svg>);
+    case "gl":
+      return (<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1.2" /></svg>);
+    default:
+      return (<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" /></svg>);
+  }
+}
 
 const INITIAL_DEMO_TXS: Tx[] = [
   { id: "d1", d: "2026-10-18", t: "in", c: "Income", n: "Monthly Salary", a: 5200 },
@@ -223,35 +242,34 @@ export default function LiveSandbox() {
         {glassPhase !== "gone" && (
           <div className={`liquid-veil ${glassPhase === "visible" ? "is-in" : ""} ${glassPhase === "fading" ? "is-out" : ""}`} onClick={() => setGlassPhase("gone")}>
             <div className="liquid-center">
-              <img 
-                src="/glass-text.png" 
-                alt="Welcome to your first experience." 
-                className="liquid-img"
-              />
+              <PremiumWelcomeText play={glassPhase !== "waiting"} />
               <span className="liquid-sub mono">Interactive Sandbox · Ready in a moment</span>
             </div>
           </div>
         )}
 
         <div className="sandbox-app">
+          
           <div className="top">
             <div className="logo">Penny<i>.</i></div>
-            <nav>
+            <nav className="sandbox-desk-nav">
               {TABS.map(([k, label]) => (
                 <button key={k} className={k === view ? "on" : ""} onClick={() => setView(k)}>{label}</button>
               ))}
             </nav>
-            <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-              <select value={cur} onChange={(e) => setCur(e.target.value)} style={{ background: "var(--bg)", border: "1px solid var(--bd)", color: "var(--tx)", padding: "6px 10px", borderRadius: "0.6rem" }}>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <select className="desk-only" value={cur} onChange={(e) => setCur(e.target.value)} style={{ background: "var(--bg)", border: "1px solid var(--bd)", color: "var(--tx)", padding: "6px 10px", borderRadius: "0.6rem" }}>
                 {CURRENCIES.map((c) => (<option key={c}>{c}</option>))}
               </select>
-              <button type="button" className="s" onClick={() => {
+              <button type="button" className="s desk-only" onClick={() => {
                   if (!restored) { setStreak(15); setRestored(true); notify("🔥 Streak restored to 15! (Monthly restore used)"); }
                   else { notify(`🔥 ${streak}-day streak active!`); }
                 }}>
                 🔥 {streak} {!restored && "· Restore (15)"}
               </button>
-              <Link href="/dashboard" className="p" style={{ textDecoration: "none", padding: "0.5rem 1rem", borderRadius: "0.75rem" }}>Save My Data →</Link>
+              <Link href="/dashboard" className="p" style={{ textDecoration: "none", padding: "8px 16px", borderRadius: "0.75rem", whiteSpace: "nowrap", fontSize: "14px" }}>
+                Save My Data →
+              </Link>
             </div>
           </div>
 
@@ -412,6 +430,21 @@ export default function LiveSandbox() {
               </div>
             )}
           </div>
+
+          <nav className="sandbox-tabbar" aria-label="Primary">
+            {TABS.map(([k]) => (
+              <button
+                key={k}
+                className={k === view ? "on" : ""}
+                aria-label={FULL[k]}
+                aria-current={k === view ? "page" : undefined}
+                onClick={() => setView(k)}
+              >
+                <span className="ic"><TabIcon k={k} /></span>
+                <span>{SHORT[k]}</span>
+              </button>
+            ))}
+          </nav>
 
           {toast && <div className="sandbox-toast">{toast}</div>}
         </div>
