@@ -316,10 +316,17 @@ select.sel { background: var(--card); border: 1px solid var(--bd); color: var(--
   main { padding: 16px max(16px, env(safe-area-inset-right)) calc(96px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left)); }
   .grid { gap: 0.875rem; }
   .grid > * { min-width: 0; }
-  .g2, .g4 { grid-template-columns: 1fr; }
+  .g2 { grid-template-columns: 1fr; }
+  .g4 { grid-template-columns: repeat(2, 1fr); }
+  .g4 .card {
+    aspect-ratio: 1 / 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center !important;
+  }
   .card { padding: 1.25rem; border-radius: 1.25rem; }
   .big { font-size: 1.75rem; overflow-wrap: anywhere; }
-  .card.hero .big { font-size: 2.25rem; }
+  .card.hero .big { font-size: 1.75rem; }
 
   /* Touch targets + no iOS zoom-on-focus */
   button.p, button.s, a.p, a.s { min-height: 44px; }

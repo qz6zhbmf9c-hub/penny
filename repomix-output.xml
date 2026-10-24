@@ -784,61 +784,6 @@ export default function AuthButtons() {
 }
 </file>
 
-<file path="src/components/Charts.tsx">
-import { C, Tx, mTx, sum, ym } from "@/lib/penny";
-
-export function Donut({ data, f }: { data: Record<string, number>; f: (n: number) => string }) {
-  const total = sum(Object.values(data), (x) => x);
-  let acc = 0;
-  const seg = Object.entries(data).sort((a, b) => b[1] - a[1]).map(([c, v]) => {
-    const p = (v / (total || 1)) * 100, off = -acc; acc += p;
-    return { c, v, p, off };
-  });
-  return (
-    <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
-      <svg width="150" height="150" viewBox="0 0 42 42">
-        <circle cx="21" cy="21" r="15.9" fill="none" stroke="var(--bd)" strokeWidth="5.5" />
-        {seg.map((s) => (
-          <circle key={s.c} cx="21" cy="21" r="15.9" fill="none" stroke={C[s.c] || "#999"} strokeWidth="5.5"
-            strokeDasharray={`${s.p} ${100 - s.p}`} strokeDashoffset={s.off} transform="rotate(-90 21 21)" />
-        ))}
-        <text x="21" y="22.5" textAnchor="middle" fontSize="5" fontWeight="800" fill="var(--tx)">{f(total)}</text>
-      </svg>
-      <div style={{ flex: 1, minWidth: 140 }}>
-        {seg.length ? seg.map((s) => (
-          <div className="lg" key={s.c}><s style={{ background: C[s.c] }} />{s.c}<span>{f(s.v)}</span></div>
-        )) : <span className="sub">No spending yet</span>}
-      </div>
-    </div>
-  );
-}
-
-export function Bars({ txs }: { txs: Tx[] }) {
-  const ms = [5, 4, 3, 2, 1, 0].map(ym);
-  const d = ms.map((k) => [sum(mTx(txs, k).filter((x) => x.t === "in"), (x) => x.a), sum(mTx(txs, k).filter((x) => x.t === "out"), (x) => x.a)]);
-  const mx = Math.max(1, ...d.flat());
-  return (
-    <>
-      <svg viewBox="0 0 360 160" width="100%">
-        {d.map((v, i) => {
-          const x = i * 60 + 8, h1 = (v[0] / mx) * 115, h2 = (v[1] / mx) * 115;
-          return (
-            <g key={ms[i]}>
-              <rect x={x} y={130 - h1} width="20" height={h1} rx="4" fill="var(--ok)" />
-              <rect x={x + 23} y={130 - h2} width="20" height={h2} rx="4" fill="var(--ac)" />
-              <text x={x + 21} y="148" textAnchor="middle" fontSize="10" fill="var(--mut)">
-                {new Date(ms[i] + "-02").toLocaleString("en", { month: "short" })}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
-      <div className="sub"><span className="pos">■</span> Income &nbsp;<span style={{ color: "var(--ac)" }}>■</span> Spending</div>
-    </>
-  );
-}
-</file>
-
 <file path="src/components/ProfileView.tsx">
 "use client";
 import { useEffect, useState } from "react";
@@ -1538,6 +1483,61 @@ export default function Image() {
       </div>
     ),
     size
+  );
+}
+</file>
+
+<file path="src/components/Charts.tsx">
+import { C, Tx, mTx, sum, ym } from "@/lib/penny";
+
+export function Donut({ data, f }: { data: Record<string, number>; f: (n: number) => string }) {
+  const total = sum(Object.values(data), (x) => x);
+  let acc = 0;
+  const seg = Object.entries(data).sort((a, b) => b[1] - a[1]).map(([c, v]) => {
+    const p = (v / (total || 1)) * 100, off = -acc; acc += p;
+    return { c, v, p, off };
+  });
+  return (
+    <div className="donut-wrap">
+      <svg className="donut-svg" width="150" height="150" viewBox="0 0 42 42">
+        <circle cx="21" cy="21" r="15.9" fill="none" stroke="var(--bd)" strokeWidth="5.5" />
+        {seg.map((s) => (
+          <circle key={s.c} cx="21" cy="21" r="15.9" fill="none" stroke={C[s.c] || "#999"} strokeWidth="5.5"
+            strokeDasharray={`${s.p} ${100 - s.p}`} strokeDashoffset={s.off} transform="rotate(-90 21 21)" />
+        ))}
+        <text x="21" y="22.5" textAnchor="middle" fontSize="5" fontWeight="800" fill="var(--tx)">{f(total)}</text>
+      </svg>
+      <div className="donut-legend">
+        {seg.length ? seg.map((s) => (
+          <div className="lg" key={s.c}><s style={{ background: C[s.c] }} />{s.c}<span>{f(s.v)}</span></div>
+        )) : <span className="sub">No spending yet</span>}
+      </div>
+    </div>
+  );
+}
+
+export function Bars({ txs }: { txs: Tx[] }) {
+  const ms = [5, 4, 3, 2, 1, 0].map(ym);
+  const d = ms.map((k) => [sum(mTx(txs, k).filter((x) => x.t === "in"), (x) => x.a), sum(mTx(txs, k).filter((x) => x.t === "out"), (x) => x.a)]);
+  const mx = Math.max(1, ...d.flat());
+  return (
+    <>
+      <svg className="bars-svg" viewBox="0 0 360 160" width="100%">
+        {d.map((v, i) => {
+          const x = i * 60 + 8, h1 = (v[0] / mx) * 115, h2 = (v[1] / mx) * 115;
+          return (
+            <g key={ms[i]}>
+              <rect x={x} y={130 - h1} width="20" height={h1} rx="4" fill="var(--ok)" />
+              <rect x={x + 23} y={130 - h2} width="20" height={h2} rx="4" fill="var(--ac)" />
+              <text x={x + 21} y="148" textAnchor="middle" fontSize="10" fill="var(--mut)">
+                {new Date(ms[i] + "-02").toLocaleString("en", { month: "short" })}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+      <div className="sub"><span className="pos">■</span> Income &nbsp;<span style={{ color: "var(--ac)" }}>■</span> Spending</div>
+    </>
   );
 }
 </file>
@@ -4259,6 +4259,50 @@ body:has(.lp) {
 .lp .sandbox-app .tx { border-bottom-color: var(--bd); }
 </file>
 
+<file path="package.json">
+{
+  "name": "penny",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@lemonsqueezy/lemonsqueezy.js": "^4.0.0",
+    "@next-auth/prisma-adapter": "^1.0.7",
+    "@prisma/client": "^6.19.3",
+    "@vercel/analytics": "^2.0.1",
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^18.0.6",
+    "lucide-react": "^1.53.0",
+    "next": "16.4.0",
+    "next-auth": "^4.24.15",
+    "nodemailer": "^7.0.13",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@tailwindcss/turbopack": "^4",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^20",
+    "@types/nodemailer": "^8.0.2",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "autoprefixer": "^10.6.1",
+    "eslint": "^9",
+    "eslint-config-next": "16.4.0",
+    "postcss": "^8.5.29",
+    "prisma": "^6.19.3",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5"
+  }
+}
+</file>
+
 <file path="src/app/layout.tsx">
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
@@ -4324,6 +4368,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover",
   themeColor: "#0A1733",
 };
 
@@ -4340,50 +4385,6 @@ export default function RootLayout({
       </body>
     </html>
   );
-}
-</file>
-
-<file path="package.json">
-{
-  "name": "penny",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
-  },
-  "dependencies": {
-    "@lemonsqueezy/lemonsqueezy.js": "^4.0.0",
-    "@next-auth/prisma-adapter": "^1.0.7",
-    "@prisma/client": "^6.19.3",
-    "@vercel/analytics": "^2.0.1",
-    "bcryptjs": "^2.4.3",
-    "dotenv": "^18.0.6",
-    "lucide-react": "^1.53.0",
-    "next": "16.4.0",
-    "next-auth": "^4.24.15",
-    "nodemailer": "^7.0.13",
-    "react": "19.3.0",
-    "react-dom": "19.3.0"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4.3.3",
-    "@tailwindcss/turbopack": "^4",
-    "@types/bcryptjs": "^2.4.6",
-    "@types/node": "^20",
-    "@types/nodemailer": "^8.0.2",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "autoprefixer": "^10.6.1",
-    "eslint": "^9",
-    "eslint-config-next": "16.4.0",
-    "postcss": "^8.5.29",
-    "prisma": "^6.19.3",
-    "tailwindcss": "^4.3.3",
-    "typescript": "^5"
-  }
 }
 </file>
 
@@ -4563,7 +4564,7 @@ export function Overview({ txs, f, isPro, onUpgrade }: { txs: Tx[]; f: Fmt } & G
     <>
       <div className="grid g4">
         {/* Total Balance Hero Card aligned Top-Left */}
-        <div className="card hero" style={{ padding: "1.5rem", display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "flex-start", textAlign: "left" }}>
+        <div className="card hero" style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "flex-start", textAlign: "left" }}>
           <h3 style={{ textAlign: "left", margin: "0 0 0.5rem 0", color: "var(--mut)" }}>Total balance</h3>
           <div className="big" style={{ textAlign: "left", margin: "0.25rem 0" }}>{f(bal)}</div>
           <div className="sub" style={{ textAlign: "left" }}>All accounts</div>
@@ -4816,47 +4817,49 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
     <>
       <div className="card">
         <h3>Add transaction</h3>
-        <div className="form" style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", marginTop: "1rem" }}>
-          <button
-            type="button"
-            className={"s mic" + (listening ? " rec" : "")}
-            onClick={mic}
-            disabled={parsing}
-            aria-label={listening ? "Stop recording" : "Log by voice"}
-            title={outOfCredits ? "Voice logging (Pro)" : "Log by voice"}
-            style={{ flex: "0 0 auto", fontSize: 18, padding: "0 10px", minHeight: 40, margin: 0 }}
-          >
-            {parsing && !scanning ? "⏳" : listening ? "🔴" : outOfCredits ? "🎙️🔒" : "🎙️"}
-          </button>
-          <button
-            type="button"
-            className="s"
-            onClick={receipt}
-            disabled={parsing || listening}
-            aria-label="Scan a receipt"
-            title={outOfCredits ? "Receipt scanner (Pro)" : "Scan a receipt"}
-            style={{ flex: "0 0 auto", fontSize: 18, padding: "0 10px", minHeight: 40, margin: 0 }}
-          >
-            {scanning ? "📸⏳" : outOfCredits ? "📸🔒" : "📸"}
-          </button>
+        <div className="form txform">
+          <div className="txform-actions">
+            <button
+              type="button"
+              className={"s txbtn mic" + (listening ? " rec" : "")}
+              onClick={mic}
+              disabled={parsing}
+              aria-label={listening ? "Stop recording" : "Log by voice"}
+              title={outOfCredits ? "Voice logging (Pro)" : "Log by voice"}
+            >
+              <span className="ico">{parsing && !scanning ? "⏳" : listening ? "🔴" : outOfCredits ? "🎙️🔒" : "🎙️"}</span>
+              <span className="lbl">{listening ? "Stop" : "Voice"}</span>
+            </button>
+            <button
+              type="button"
+              className="s txbtn"
+              onClick={receipt}
+              disabled={parsing || listening}
+              aria-label="Scan a receipt"
+              title={outOfCredits ? "Receipt scanner (Pro)" : "Scan a receipt"}
+            >
+              <span className="ico">{scanning ? "📸⏳" : outOfCredits ? "📸🔒" : "📸"}</span>
+              <span className="lbl">{scanning ? "Reading…" : "Scan receipt"}</span>
+            </button>
+          </div>
           <input ref={fileRef} type="file" accept="image/*" capture="environment" hidden onChange={onFile} />
-          
-          <select value={t} onChange={(e) => setT(e.target.value as "in" | "out")} style={{ width: "auto", minHeight: 40, margin: 0, padding: "8px 12px" }}>
+
+          <select className="f-type" aria-label="Type" value={t} onChange={(e) => setT(e.target.value as "in" | "out")}>
             <option value="out">Expense</option>
             <option value="in">Income</option>
           </select>
-          
-          <input type="number" min="0" placeholder="Amount" value={a} onChange={(e) => setA(e.target.value)} style={{ width: 100, minHeight: 40, margin: 0, padding: "8px 12px" }} />
-          
-          <select value={c} onChange={(e) => setC(e.target.value)} style={{ width: "auto", minHeight: 40, margin: 0, padding: "8px 12px" }}>
+
+          <input className="f-amt" type="number" inputMode="decimal" min="0" placeholder="Amount" aria-label="Amount" value={a} onChange={(e) => setA(e.target.value)} />
+
+          <select className="f-cat" aria-label="Category" value={c} onChange={(e) => setC(e.target.value)}>
             {Object.keys(C).map((k) => <option key={k}>{k}</option>)}
           </select>
-          
-          <input placeholder="Note (e.g. Coffee)" value={n} onChange={(e) => setN(e.target.value)} style={{ flex: 1, minWidth: 160, minHeight: 40, margin: 0, padding: "8px 12px" }} />
-          
-          <input type="date" value={d} onChange={(e) => setD(e.target.value)} style={{ width: 140, minHeight: 40, margin: 0, padding: "8px 12px" }} />
-          
-          <button className="p" onClick={add} style={{ flex: "0 0 auto", minHeight: 40, padding: "0 20px", margin: 0 }}>Add</button>
+
+          <input className="f-note" placeholder="Note (e.g. Coffee)" aria-label="Note" value={n} onChange={(e) => setN(e.target.value)} />
+
+          <input className="f-date" type="date" aria-label="Date" value={d} onChange={(e) => setD(e.target.value)} />
+
+          <button className="p f-add" onClick={add}>Add</button>
         </div>
         
         <p className="sub" style={{ margin: "12px 0 0" }}>
@@ -4881,8 +4884,8 @@ export function Transactions({ txs, f, isPro, onUpgrade, onAdd, onDelete, notify
       </div>
       
       <div className="card" style={{ marginTop: 14 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
-          <input placeholder="Search…" value={q} onChange={(e) => setQ(e.target.value)} style={{ flex: 1 }} />
+        <div className="txbar">
+          <input placeholder="Search…" aria-label="Search transactions" value={q} onChange={(e) => setQ(e.target.value)} />
           <button className="s" onClick={csv}>Copy CSV{isPro ? "" : " 🔒"}</button>
         </div>
         {list.length ? list.map((x) => (
@@ -4912,7 +4915,7 @@ export function BudgetsView({ txs, budgets, f, isPro, onUpgrade, onSave }: {
             <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
               <b>{c}</b>
               <span className="sub">{f(s)} of <input key={l} type="number" defaultValue={l} disabled={!isPro}
-                onBlur={(e) => +e.target.value !== l && onSave(c, +e.target.value)} style={{ width: 84, padding: "4px 6px" }} /></span>
+                onBlur={(e) => +e.target.value !== l && onSave(c, +e.target.value)} className="bd-input" inputMode="decimal" aria-label={`${c} budget`} /></span>
             </div>
             <div className="bar"><i style={{ width: Math.min(p, 100) + "%", background: p > 100 ? "var(--bad)" : p > 80 ? "var(--warn)" : C[c] }} /></div>
             {p > 100 && <span className="sub neg">Over budget by {f(s - l)}</span>}
@@ -4932,7 +4935,7 @@ function GoalCard({ g, f, onFund, onDelete }: { g: Goal; f: Fmt; onFund: (id: st
       <div className="big">{f(g.s)} <span className="sub">of {f(g.t)}</span></div>
       <div className="bar"><i style={{ width: p + "%", background: "linear-gradient(90deg,var(--ac),var(--ac2))" }} /></div>
       <div className="sub">{Math.round(p)}% there</div>
-      <div className="form" style={{ marginTop: 10 }}>
+      <div className="form goalform" style={{ marginTop: 10 }}>
         <input type="number" placeholder="Add funds" value={v} onChange={(e) => setV(e.target.value)} />
         <button className="s" onClick={() => { if (+v) { onFund(g.id, +v); setV(""); } }}>Add</button>
         <button className="x" onClick={() => onDelete(g.id)}>✕</button>
@@ -4951,7 +4954,7 @@ export function GoalsView({ goals, f, isPro, onUpgrade, onAdd, onFund, onDelete 
         {goals.map((g) => <GoalCard key={g.id} g={g} f={f} onFund={onFund} onDelete={onDelete} />)}
         <div className="card">
           <h3>New goal</h3>
-          <div className="form">
+          <div className="form stackform">
             <input placeholder="Goal name" value={n} onChange={(e) => setN(e.target.value)} />
             <input type="number" placeholder="Target" value={t} onChange={(e) => setT(e.target.value)} />
             <button className="p" onClick={() => { if (n && +t) { onAdd(n, +t); setN(""); setT(""); } }}>Create</button>
@@ -4981,6 +4984,25 @@ const TABS: [View, string][] = [
   ["gl", "Goals"],
   ["pr", "Profile"],
 ];
+
+// Short labels so five tabs fit on an iPhone SE
+const SHORT: Record<View, string> = { ov: "Overview", tx: "Activity", bd: "Budgets", gl: "Goals", pr: "Profile" };
+const FULL: Record<View, string> = { ov: "Overview", tx: "Transactions", bd: "Budgets", gl: "Goals", pr: "Profile" };
+
+function TabIcon({ k }: { k: View }) {
+  switch (k) {
+    case "ov":
+      return (<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="2" /><rect x="13.5" y="3" width="7.5" height="7.5" rx="2" /><rect x="3" y="13.5" width="7.5" height="7.5" rx="2" /><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2" /></svg>);
+    case "tx":
+      return (<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v16M7 20l-3-3M7 20l3-3" /><path d="M17 20V4M17 4l-3 3M17 4l3 3" /></svg>);
+    case "bd":
+      return (<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9" /><path d="M12 3a9 9 0 0 1 9 9h-9z" /></svg>);
+    case "gl":
+      return (<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1.2" /></svg>);
+    default:
+      return (<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" /></svg>);
+  }
+}
 
 type StreakData = {
   streak: number;
@@ -5159,7 +5181,7 @@ export default function Home() {
   if (!session) return <LoginCard />;
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "var(--bg)", color: "var(--tx)" }}>
+    <div style={{ minHeight: "100dvh", backgroundColor: "var(--bg)", color: "var(--tx)" }}>
       <div className="top">
         <a
           href="https://mypenny.net"
@@ -5168,14 +5190,15 @@ export default function Home() {
         >
           Penny<i>.</i>
         </a>
-        <nav>{TABS.map(([k, label]) => <button key={k} className={k === view ? "on" : ""} onClick={() => setView(k)}>{label}</button>)}</nav>
-        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-          <select value={cur} onChange={(e) => setCur(e.target.value)}>{CURRENCIES.map((c) => <option key={c}>{c}</option>)}</select>
+        <nav className="tabs-desktop" aria-label="Sections">{TABS.map(([k, label]) => <button key={k} className={k === view ? "on" : ""} onClick={() => setView(k)}>{label}</button>)}</nav>
+        <div className="top-actions">
+          <select className="sel desk-only" aria-label="Currency" value={cur} onChange={(e) => setCur(e.target.value)}>{CURRENCIES.map((c) => <option key={c}>{c}</option>)}</select>
           {isPro ? <button className="s" disabled>✨ Pro</button> : <button className="p" onClick={upgrade}>Go Pro</button>}
           <button
             type="button"
             className="s"
             onClick={handleStreakClick}
+            aria-label={isPro ? `${streak}-day streak` : "Daily streak (Pro)"}
             title={
               !isPro
                 ? "Daily streak (Pro)"
@@ -5187,13 +5210,18 @@ export default function Home() {
             {isPro ? (
               <>
                 🔥 {streak}
-                {lostStreak > 0 && ` · Restore (${lostStreak + 1})`}
+                {lostStreak > 0 && (
+                  <>
+                    <span className="rs-long"> · Restore ({lostStreak + 1})</span>
+                    <span className="rs-short"> ↺ {lostStreak + 1}</span>
+                  </>
+                )}
               </>
             ) : (
               "🔥🔒"
             )}
           </button>
-          <button className="s" onClick={() => signOut({ callbackUrl: "/dashboard" })}>Sign out</button>
+          <button className="s desk-only" onClick={() => signOut({ callbackUrl: "/dashboard" })}>Sign out</button>
         </div>
       </div>
       <main>
@@ -5213,8 +5241,39 @@ export default function Home() {
             onFund={(id, v) => guard(async () => { await api.fundGoal(id, v); setGoals(await api.goals()); })}
             onDelete={(id) => guard(async () => { await api.deleteGoal(id); setGoals(await api.goals()); })} />
         )}
-        {view === "pr" && <ProfileView />}
+        {view === "pr" && (
+          <>
+            {/* Phones: the currency picker and sign-out live here instead of the header */}
+            <div className="card mobile-only" style={{ marginBottom: 14 }}>
+              <h3>Preferences</h3>
+              <div className="prow">
+                <span>Currency</span>
+                <select className="sel" aria-label="Currency" value={cur} onChange={(e) => setCur(e.target.value)}>{CURRENCIES.map((c) => <option key={c}>{c}</option>)}</select>
+              </div>
+              <div className="prow">
+                <span>Session</span>
+                <button className="s" onClick={() => signOut({ callbackUrl: "/dashboard" })}>Sign out</button>
+              </div>
+            </div>
+            <ProfileView />
+          </>
+        )}
       </main>
+      {/* Phones: iOS-style frosted bottom tab bar (hidden on desktop via CSS) */}
+      <nav className="tabbar" aria-label="Primary">
+        {TABS.map(([k]) => (
+          <button
+            key={k}
+            className={k === view ? "on" : ""}
+            aria-label={FULL[k]}
+            aria-current={k === view ? "page" : undefined}
+            onClick={() => { setView(k); window.scrollTo({ top: 0 }); }}
+          >
+            <span className="ic"><TabIcon k={k} /></span>
+            <span>{SHORT[k]}</span>
+          </button>
+        ))}
+      </nav>
       <div id="toast" className={toast ? "on" : ""}>{toast}</div>
     </div>
   );
@@ -5447,6 +5506,163 @@ svg { overflow: visible; }
 
 
 .roast { margin: 0; padding: 12px 14px; border-left: 3px solid var(--ac2); background: rgba(217, 179, 91, 0.12); border-radius: 0 10px 10px 0; font-size: 16px; line-height: 1.5; }
+
+
+/* =====================================================================
+   MOBILE UX POLISH: iOS-style app shell (ivory + midnight navy + gold)
+   ===================================================================== */
+:root { --spring: cubic-bezier(0.22, 1, 0.36, 1); }
+
+/* Crisp keyboard focus */
+button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--ac); outline-offset: 2px; }
+input[hidden] { display: none !important; }
+
+/* Shared building blocks (all screen sizes) */
+.top-actions { display: flex; gap: 6px; align-items: center; }
+select.sel { background: var(--card); border: 1px solid var(--bd); color: var(--tx); padding: 0.5rem 0.75rem; border-radius: 0.75rem; font: inherit; font-size: 0.875rem; font-weight: 600; min-height: 40px; }
+.tabbar, .mobile-only, .rs-short { display: none; }
+
+/* Charts */
+.donut-wrap { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.donut-svg { max-width: 100%; height: auto; }
+.donut-legend { flex: 1; min-width: 140px; }
+.bars-svg { display: block; max-width: 100%; height: auto; }
+
+/* Transactions: search bar + add form (desktop keeps the original one-row layout) */
+.txbar { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.txbar input { flex: 1; min-width: 0; background: var(--card); border: 1px solid var(--bd); color: var(--tx); padding: 0.5rem 1rem; border-radius: 0.5rem; outline: none; font-family: inherit; box-sizing: border-box; }
+.txbar input:focus { border-color: var(--ac); box-shadow: 0 0 0 3px rgba(42, 76, 176, 0.18); }
+.txbar button { white-space: nowrap; }
+
+.txform { margin-top: 1rem; align-items: center; }
+.txform .txform-actions { display: contents; }
+.txform .txbtn { flex: 0 0 auto; gap: 8px; font-size: 18px; padding: 0 10px; min-height: 40px; margin: 0; }
+.txform .txbtn .lbl { display: none; }
+.txform select, .txform input { margin: 0; min-height: 40px; padding: 8px 12px; }
+.txform .f-type, .txform .f-cat { width: auto; }
+.txform .f-amt { width: 100px; }
+.txform .f-note { flex: 1; min-width: 160px; }
+.txform .f-date { width: 140px; }
+.txform .f-add { flex: 0 0 auto; min-height: 40px; padding: 0 20px; margin: 0; }
+
+/* Budgets + goals inputs */
+.bd-input { width: 84px; min-height: 36px; padding: 4px 8px; background: var(--card); border: 1px solid var(--bd); color: var(--tx); border-radius: 0.5rem; font-family: inherit; text-align: right; }
+.bd-input:disabled { opacity: 0.6; }
+.goalform { flex-wrap: nowrap; align-items: center; }
+.goalform input { flex: 1; min-width: 0; width: auto; }
+
+/* ---------------------------------------------------------------------
+   PHONES (<= 768px)
+   --------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  body { overflow-x: hidden; overflow-x: clip; -webkit-text-size-adjust: 100%; }
+  .center { min-height: 100dvh; }
+
+  /* 1. Frosted header: logo left, Pro + streak right */
+  .top {
+    min-height: 60px; gap: 10px;
+    padding: calc(8px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right)) 8px max(16px, env(safe-area-inset-left));
+    background: rgba(246, 241, 230, 0.78);
+    -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+  }
+  .tabs-desktop, .desk-only { display: none !important; }
+  .top-actions { gap: 8px; }
+  .top-actions button { min-height: 44px; padding: 0 14px; font-size: 0.8125rem; white-space: nowrap; }
+
+  /* 2. Fixed bottom tab bar (iOS style, frosted glass) */
+  .tabbar {
+    display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; gap: 0;
+    padding: 6px max(8px, env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left));
+    background: rgba(246, 241, 230, 0.74);
+    -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+    border-top: 1px solid rgba(14, 27, 51, 0.12);
+    box-shadow: 0 -10px 30px -20px rgba(14, 27, 51, 0.5);
+  }
+  .tabbar button {
+    flex: 1; min-width: 0; min-height: 52px; padding: 4px 2px; border-radius: 14px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    background: none; border: 0; color: var(--mut); font-size: 10.5px; font-weight: 600; letter-spacing: 0.01em;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .tabbar button.on { background: none; color: var(--tx); }
+  .tabbar .ic { position: relative; display: grid; place-items: center; width: 52px; height: 30px; transition: transform 0.25s var(--spring); }
+  .tabbar .ic::before { content: ""; position: absolute; inset: 0; border-radius: 999px; background: rgba(217, 179, 91, 0.34); opacity: 0; transform: scale(0.6); transition: transform 0.3s var(--spring), opacity 0.2s; }
+  .tabbar button.on .ic::before { opacity: 1; transform: scale(1); }
+  .tabbar button:active .ic { transform: scale(0.9); }
+  .tabbar .ic svg { position: relative; width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; overflow: visible; }
+  .tabbar button.on .ic svg { stroke: var(--ac); }
+  .tabbar span:last-child { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .mobile-only { display: block; }
+
+  /* 3. Spacing: more room for the content, grids stack */
+  main { padding: 16px max(16px, env(safe-area-inset-right)) calc(96px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left)); }
+  .grid { gap: 0.875rem; }
+  .grid > * { min-width: 0; }
+  .g2, .g4 { grid-template-columns: 1fr; }
+  .card { padding: 1.25rem; border-radius: 1.25rem; }
+  .big { font-size: 1.75rem; overflow-wrap: anywhere; }
+  .card.hero .big { font-size: 2.25rem; }
+
+  /* Touch targets + no iOS zoom-on-focus */
+  button.p, button.s, a.p, a.s { min-height: 44px; }
+  button.x { min-width: 44px; min-height: 44px; }
+  input, select, textarea { font-size: 16px; }
+  .form input, .form select, .field input, .txbar input { min-height: 48px; }
+  .bd-input { min-height: 44px; font-size: 16px; }
+  .txbar { gap: 10px; }
+
+  /* 4. Transactions form: stacked, full-width, big touch targets */
+  .txform { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  .txform .txform-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .txform .txbtn {
+    width: 100%; min-height: 56px; border-radius: 16px; font-size: 15px; padding: 0 12px;
+    background: linear-gradient(180deg, rgba(217, 179, 91, 0.22), rgba(217, 179, 91, 0.08));
+    border-color: rgba(154, 98, 0, 0.30);
+  }
+  .txform .txbtn .ico { font-size: 22px; line-height: 1; }
+  .txform .txbtn .lbl { display: inline; }
+  .txform select, .txform input { width: 100%; min-width: 0; min-height: 48px; padding: 10px 14px; border-radius: 0.875rem; box-sizing: border-box; }
+  .txform .f-amt, .txform .f-date, .txform .f-type, .txform .f-cat, .txform .f-note { width: 100%; min-width: 0; flex: none; }
+  .txform input[type="date"] { -webkit-appearance: none; appearance: none; text-align: left; }
+  .txform .f-add { width: 100%; min-height: 52px; border-radius: 1rem; font-size: 16px; }
+  .stackform > * { flex: 1 1 100%; }
+  .stackform button { min-height: 48px; }
+
+  /* Transaction rows */
+  .tx { gap: 0.75rem; padding: 0.875rem 0; }
+  .tx .m { min-width: 0; }
+  .tx .m b, .tx .m .sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tx > b { white-space: nowrap; }
+
+  /* 5. Charts scale to the card, never scroll sideways */
+  .donut-wrap { flex-direction: column; align-items: stretch; gap: 14px; }
+  .donut-svg { width: min(220px, 72vw); margin: 0 auto; display: block; }
+  .donut-legend { width: 100%; min-width: 0; }
+
+  /* Toast floats above the tab bar */
+  #toast {
+    left: 50%; right: auto; bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+    max-width: calc(100vw - 32px); text-align: center; border-radius: 999px; padding: 0.65rem 1.1rem;
+    transform: translate(-50%, 1rem);
+  }
+  #toast.on { transform: translate(-50%, 0); }
+}
+
+/* Very small phones (iPhone SE and narrower) */
+@media (max-width: 400px) {
+  .top .logo { font-size: 1.1rem; }
+  .top-actions { gap: 6px; }
+  .top-actions button { padding: 0 12px; }
+  .rs-long { display: none; }
+  .rs-short { display: inline; }
+  .tabbar .ic { width: 44px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tabbar .ic, .tabbar .ic::before, #toast { transition: none; }
+  .mic.rec { animation: none; }
+}
 </file>
 
 <file path="src/app/api/receipt/route.ts">
